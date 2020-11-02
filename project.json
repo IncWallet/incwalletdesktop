@@ -1,0 +1,22 @@
+{
+ "name": "incwalletdesktop",
+ "description": "Enter your project description",
+ "author": {
+  "name": "wic",
+  "email": "support@wic.org"
+ },
+ "version": "0.1.0",
+ "binaryname": "wid",
+ "frontend": {
+  "dir": "frontend",
+  "install": "npm install",
+  "build": "npx ng build --single-bundle true --output-hashing none --prod --bundle-styles false",
+  "bridge": "src",
+  "serve": "npx ng serve --poll=2000"
+ },
+ "WailsVersion": "",
+ "CrossCompile": false,
+ "Platform": "",
+ "Architecture": "",
+ "LdFlags": ""
+}
