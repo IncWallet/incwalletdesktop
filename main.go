@@ -2,11 +2,25 @@ package main
 
 import (
 	"github.com/leaanthony/mewn"
+	log "github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails"
+	"wid/backend/controllers"
+	"wid/backend/database"
 )
 
 func basic() string {
 	return "World!"
+}
+
+func InitDB() {
+	if err := database.Init(DatabaseURI, DatabaseName); err != nil {
+		log.Errorf("cannot create database. Error %v", err)
+		return
+	}
+	log.Infof("create database ok! Database Name: %v; Database URI: %v", DatabaseName, DatabaseURI)
+	if err := controllers.LoadState(); err != nil {
+		log.Warnf("Load State error: %v", err)
+	}
 }
 
 func main() {
@@ -22,6 +36,6 @@ func main() {
 		CSS:    css,
 		Colour: "#131313",
 	})
-	app.Bind(basic)
+	app.Bind(&controllers.App{})
 	app.Run()
 }
