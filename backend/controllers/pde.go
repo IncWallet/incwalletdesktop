@@ -1,16 +1,15 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/revel/revel"
 	"gopkg.in/mgo.v2/bson"
 	"math"
-	"strconv"
+	"wid/backend/database"
+	"wid/backend/lib/common"
+	"wid/backend/models"
 )
 
-type PdeCtrl struct {
-	*revel.Controller
-}
 
 type PdeParams struct {
 	Token1IDStr    string `json:"token1id"`
@@ -53,63 +52,44 @@ func getExchangeCrossRate(fromToken, toToken string, amount, fee uint64) (uint64
 	return finalAmount, nil
 }
 
-func (p *PdeCtrl) GetPdePoolPairPrice() revel.Result {
-	pdeParams := &PdeParams{}
-	if err := p.Params.BindJSON(&pdeParams); err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
+func (PdeCtrl) GetPdePoolPairPrice(fromTokenIDStr, toTokenIDStr string, exchangeAmount, exchangeFee uint64) string {
+
+	receiveAmount,requestPoolPair, err := getExchangeRate(fromTokenIDStr, toTokenIDStr, exchangeAmount, exchangeFee, false)
+	if err != nil {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get exchange rate from pool pair data"), err.Error(), 0))
+		return string(res)
 	}
 
-	receiveAmount,requestPoolPair, err := getExchangeRate(pdeParams.FromTokenIDStr, pdeParams.ToTokenIDStr, pdeParams.ExchangeAmount, pdeParams.ExchangeFee, false)
-	if err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("cannot get exchange rate from pool pair data"), err.Error(), 0))
-	}
-	return p.RenderJSON(responseJsonBuilder(nil, pdePoolPairPriceJsonBuilder(requestPoolPair,
-		pdeParams.FromTokenIDStr, pdeParams.ExchangeAmount, receiveAmount), 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, pdePoolPairPriceJsonBuilder(requestPoolPair,
+		fromTokenIDStr, exchangeAmount, receiveAmount), 0))
+	return string(res)
 }
 
-func (p *PdeCtrl) GetPdeCrossPoolPairPrice() revel.Result {
-	pdeParams := &PdeParams{}
-	if err := p.Params.BindJSON(&pdeParams); err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
+func (PdeCtrl) GetPdeCrossPoolPairPrice(fromTokenIDStr, toTokenIDStr string, exchangeAmount, exchangeFee uint64) string {
+
+	if fromTokenIDStr == common.PRVID || toTokenIDStr == common.PRVID {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("bad request"),"one of from or to token id is prv", 0))
+		return string(res)
 	}
-	if pdeParams.FromTokenIDStr == common.PRVID || pdeParams.ToTokenIDStr == common.PRVID {
-		return p.RenderJSON(responseJsonBuilder(errors.New("bad request"),"one of from or to token id is prv", 0))
-	}
-	receiveAmount, requestPoolPair, err := getExchangeRate(pdeParams.FromTokenIDStr, common.PRVID, pdeParams.ExchangeAmount, uint64(0), false)
+	receiveAmount, requestPoolPair, err := getExchangeRate(fromTokenIDStr, common.PRVID, exchangeAmount, uint64(0), false)
 	if err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("cannot get exchange rate from first pool pair data"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get exchange rate from first pool pair data"), err.Error(), 0))
+		return string(res)
 	}
 
-	finalReceiveAmount, finalRequestPoolPair, err := getExchangeRate(common.PRVID, pdeParams.ToTokenIDStr, receiveAmount, uint64(0), false)
+	finalReceiveAmount, finalRequestPoolPair, err := getExchangeRate(common.PRVID, toTokenIDStr, receiveAmount, uint64(0), false)
 	if err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("cannot get exchange rate from second pool pair data"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get exchange rate from second pool pair data"), err.Error(), 0))
+		return string(res)
 	}
 	pdePoolPairPrices := make([]*PdePoolPairPriceJson, 2)
-	pdePoolPairPrices[0] = pdePoolPairPriceJsonBuilder(requestPoolPair, pdeParams.FromTokenIDStr, pdeParams.ExchangeAmount, receiveAmount)
+	pdePoolPairPrices[0] = pdePoolPairPriceJsonBuilder(requestPoolPair, fromTokenIDStr, exchangeAmount, receiveAmount)
 	pdePoolPairPrices[1] = pdePoolPairPriceJsonBuilder(finalRequestPoolPair, common.PRVID, receiveAmount, finalReceiveAmount)
-	return p.RenderJSON(responseJsonBuilder(nil, pdePoolPairPrices, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, pdePoolPairPrices, 0))
+	return string(res)
 }
 
-func (p *PdeCtrl) GetPdeTradeHistory() revel.Result {
-	var pageIndex, pageSize int
-	var err error
-	if p.Params.Get("pageindex") == "" && p.Params.Get("pagesize") == "" {
-		pageIndex = 1
-		pageSize = 1000000000
-	} else {
-		pageIndex, err = strconv.Atoi(p.Params.Get("pageindex"))
-		if err != nil {
-			return p.RenderJSON(responseJsonBuilder(errors.New("cannot get trade history, pageindex is invalid"), err.Error(), 0))
-		}
-		pageSize, err = strconv.Atoi(p.Params.Get("pagesize"))
-		if err != nil {
-			return p.RenderJSON(responseJsonBuilder(errors.New("cannot get trade history, pageSize is invalid"), err.Error(), 0))
-		}
-	}
-
-	tokenID1 := p.Params.Get("tokenid1")
-	tokenID2 := p.Params.Get("tokenid2")
-
+func (p *PdeCtrl) GetPdeTradeHistory(pageIndex, pageSize int, tokenID1, tokenID2 string) string {
 	var pdeHistory []*models.PdeTradeHistory
 	query := bson.M{}
 
@@ -134,13 +114,15 @@ func (p *PdeCtrl) GetPdeTradeHistory() revel.Result {
 
 	size, err := database.PdeHistory.Find(query).Count()
 	if err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("cannot get total pde history"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get total pde history"), err.Error(), 0))
+		return string(res)
 	}
 
 	err = database.PdeHistory.Find(query).Sort("-locktime").Skip((pageIndex-1) * pageSize).Limit(pageSize).All(&pdeHistory)
 	if err != nil {
-		return p.RenderJSON(responseJsonBuilder(errors.New("cannot get pde history"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get pde history"), err.Error(), 0))
+		return string(res)
 	}
-
-	return p.RenderJSON(responseJsonBuilder(nil, pdeTradeHistoryJsonBuilder(pdeHistory, size), 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, pdeTradeHistoryJsonBuilder(pdeHistory, size), 0))
+	return string(res)
 }

@@ -291,7 +291,7 @@ func txHistoryJsonBuilder(listTxHistory []models.TxHistory, size int) *Result {
 	}
 }
 
-func coinDetailJsonBuilder(listCoins []models.Coins) []*CoinJson {
+func coinDetailJsonBuilder(listCoins []*models.Coins) []*CoinJson {
 	listCoinJson := make([]*CoinJson, 0)
 	for _, coin := range listCoins {
 		token := getTokenByID(coin.TokenID)

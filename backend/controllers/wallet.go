@@ -8,7 +8,7 @@ import (
 /*
 Create Wallet
 */
-func (App) CreateWallet(security int, passphrase, network string) string {
+func (WalletCtrl) CreateWallet(security int, passphrase, network string) string {
 	seeds, err := StateM.WalletManager.CreateNewWallet(security, passphrase, network)
 	if err != nil {
 		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create wallet"), err.Error(), 0))
@@ -22,7 +22,7 @@ func (App) CreateWallet(security int, passphrase, network string) string {
 /*
 Import Wallet
 */
-func (App) ImportWallet(mnemonic, passphrase, network string) string {
+func (WalletCtrl) ImportWallet(mnemonic, passphrase, network string) string {
 	err := StateM.WalletManager.ImportWallet(mnemonic, passphrase, network)
 	if err != nil {
 		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot import wallet"), err.Error(), 0))
@@ -31,4 +31,17 @@ func (App) ImportWallet(mnemonic, passphrase, network string) string {
 		res, _ := json.Marshal(responseJsonBuilder(nil, "Done", 0))
 		return string(res)
 	}
+}
+
+/*
+State info
+*/
+func (WalletCtrl) GetState() string {
+	flag, code := IsStateFull()
+	if !flag {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot show info, import or add account first"), "", code))
+		return string(res)
+	}
+	res, _ := json.Marshal(responseJsonBuilder(nil, stateJsonBuilder(), 0))
+	return string(res)
 }

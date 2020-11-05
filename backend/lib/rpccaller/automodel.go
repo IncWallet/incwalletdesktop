@@ -283,6 +283,8 @@ type AutoPdeTradeHistory struct {
 		PDEContributions []interface{} `json:"PDEContributions"`
 		PDETrades        []models.PdeTradeHistory `json:"PDETrades"`
 		PDEWithdrawals  []interface{} `json:"PDEWithdrawals"`
+		PDEAcceptedTradesV2 []interface{} `json:"PDEAcceptedTradesV2"`
+		PDERefundedTradesV2 []interface{} `json:"PDERefundedTradesV2"`
 		BeaconTimeStamp int           `json:"BeaconTimeStamp"`
 	} `json:"Result"`
 	Error  interface{} `json:"Error"`

@@ -31,11 +31,21 @@ func main() {
 	app := wails.CreateApp(&wails.AppConfig{
 		Width:  1024,
 		Height: 768,
-		Title:  "incwalletdesktop",
+		Title:  "Incognito Desktop Wallet",
 		JS:     js,
 		CSS:    css,
 		Colour: "#131313",
 	})
-	app.Bind(&controllers.App{})
+
+	InitDB()
+
+	app.Bind(&controllers.WalletCtrl{})
+	app.Bind(&controllers.AccountCtrl{})
+	app.Bind(&controllers.AddressBookCtrl{})
+	app.Bind(&controllers.MinerCtrl{})
+	app.Bind(&controllers.NetworkCtrl{})
+	app.Bind(&controllers.PdeCtrl{})
+	app.Bind(&controllers.TransactionsCtrl{})
+
 	app.Run()
 }

@@ -1,36 +1,36 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/revel/revel"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"wid/backend/database"
+	"wid/backend/lib/base58"
+	"wid/backend/lib/common"
 	"wid/backend/lib/hdwallet"
 	"wid/backend/models"
 )
-
-type MinerCtrl struct {
-	*revel.Controller
-}
 
 type MinerParams struct {
 	PaymentAddresses []string `json:"paymentaddresses"`
 	MiningKeys []string `json:"miningkeys"`
 }
 
-func (c *MinerCtrl) GetMinerInfo() revel.Result {
-	minerParam := &MinerParams{}
-	if err := c.Params.BindJSON(&minerParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	}
+//Get miner info
+//- paymentAddress[]
+//- miningKey[]
+func (MinerCtrl) GetMinerInfo(paymentAddresses, miningKeys []string) string {
 	if flag, _ := IsStateFull() ; !flag{
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot start to sync account, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, 0))
+		return string(res)
 	}
+
 	listMinerInfoJson := make([]*MinerInfoJson, 0)
-	for i := range minerParam.PaymentAddresses {
+	for i := range paymentAddresses {
 		minerInfo := &MinerInfoJson{
-			PaymentAddress:    minerParam.PaymentAddresses[i],
-			MiningKey:    minerParam.MiningKeys[i],
+			PaymentAddress:    paymentAddresses[i],
+			MiningKey:    miningKeys[i],
 			BeaconHeight: StateM.NetworkManager.BeaconState.Height,
 			Epoch:        StateM.NetworkManager.BeaconState.Epoch,
 			Reward: uint64(0),
@@ -38,10 +38,13 @@ func (c *MinerCtrl) GetMinerInfo() revel.Result {
 			ShardID: -2,
 			Index:  0,
 		}
+
 		kw, err := hdwallet.Base58CheckDeserialize(minerInfo.PaymentAddress)
 		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("payment address is invalid"), err.Error(), 0))
+			res, _ := json.Marshal(responseJsonBuilder(errors.New("payment address is invalid"), err.Error(), 0))
+			return string(res)
 		}
+
 		publicKeyStr := base58.Base58Check{}.Encode(kw.KeySet.PaymentAddress.Pk, common.ZeroByte)
 		var reward models.CommitteReward
 		if err := database.Reward.Find(bson.M{"publickey":publicKeyStr}).One(&reward); err == nil {
@@ -49,7 +52,7 @@ func (c *MinerCtrl) GetMinerInfo() revel.Result {
 		}
 		committeePublicKey, err := hdwallet.GetMiningPubKey(minerInfo.MiningKey, minerInfo.PaymentAddress)
 		if err != nil {
-			revel.AppLog.Errorf("cannot get committee public key from mining key %v. Error %v", minerInfo.MiningKey, err)
+			log.Errorf("cannot get committee public key from mining key %v. Error %v", minerInfo.MiningKey, err)
 			listMinerInfoJson = append(listMinerInfoJson, minerInfo)
 			continue
 		}
@@ -59,29 +62,28 @@ func (c *MinerCtrl) GetMinerInfo() revel.Result {
 			minerInfo.ShardID = committee.ShardId
 			minerInfo.Index = committee.Index
 		} else {
-			revel.AppLog.Errorf("cannot get committee info %v. Error %v", committeePublicKey, err)
+			log.Errorf("cannot get committee info %v. Error %v", committeePublicKey, err)
 		}
 		listMinerInfoJson = append(listMinerInfoJson, minerInfo)
 	}
 
-	return c.RenderJSON(responseJsonBuilder(nil, listMinerInfoJson, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, listMinerInfoJson, 0))
+	return string(res)
 }
 
-
-func (c *MinerCtrl) GetAllMinerInfo() revel.Result {
-	minerParam := &MinerParams{}
-	if err := c.Params.BindJSON(&minerParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	}
+//Get miner info
+func (MinerCtrl) GetAllMinerInfo() string {
 	if flag, _ := IsStateFull() ; !flag{
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot start to sync account, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, 0))
+		return string(res)
 	}
 
 	var listAccounts []models.Account
 	if err := database.Accounts.Find(bson.M{
 		"wallet": StateM.WalletManager.WalletID,
 	}).All(&listAccounts); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get all accounts"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get all accounts"), err.Error(), 0))
+		return string(res)
 	}
 
 	listMinerInfoJson := make([]*MinerInfoJson, 0)
@@ -98,7 +100,8 @@ func (c *MinerCtrl) GetAllMinerInfo() revel.Result {
 		}
 		kw, err := hdwallet.Base58CheckDeserialize(minerInfo.PaymentAddress)
 		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("payment address is invalid"), err.Error(), 0))
+			res, _ := json.Marshal(responseJsonBuilder(errors.New("payment address is invalid"), err.Error(), 0))
+			return string(res)
 		}
 		publicKeyStr := base58.Base58Check{}.Encode(kw.KeySet.PaymentAddress.Pk, common.ZeroByte)
 		var reward models.CommitteReward
@@ -107,7 +110,7 @@ func (c *MinerCtrl) GetAllMinerInfo() revel.Result {
 		}
 		committeePublicKey, err := hdwallet.GetMiningPubKey(minerInfo.MiningKey, minerInfo.PaymentAddress)
 		if err != nil {
-			revel.AppLog.Errorf("cannot get committee public key from mining key %v. Error %v", minerInfo.MiningKey, err)
+			log.Errorf("cannot get committee public key from mining key %v. Error %v", minerInfo.MiningKey, err)
 			listMinerInfoJson = append(listMinerInfoJson, minerInfo)
 			continue
 		}
@@ -117,10 +120,10 @@ func (c *MinerCtrl) GetAllMinerInfo() revel.Result {
 			minerInfo.ShardID = committee.ShardId
 			minerInfo.Index = committee.Index
 		} else {
-			revel.AppLog.Errorf("cannot get committee info %v. Error %v", committeePublicKey, err)
+			log.Errorf("cannot get committee info %v. Error %v", committeePublicKey, err)
 		}
 		listMinerInfoJson = append(listMinerInfoJson, minerInfo)
 	}
-
-	return c.RenderJSON(responseJsonBuilder(nil, listMinerInfoJson, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, listMinerInfoJson, 0))
+	return string(res)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
 	"net/http"
@@ -155,7 +156,7 @@ func (nm *NetworkManager) UpdateAllToken() (int, error){
 	var listToken []models.Tokens
 	mapToken := make(map[string]bool)
 	if err := database.Tokens.Find(bson.M{}).All(&listToken); err == nil {
-		revel.AppLog.Infof("Current number of tokens local: %v", len(listToken))
+		log.Infof("Current number of tokens local: %v", len(listToken))
 		for _, token := range listToken {
 			mapToken[token.ID] = true
 		}
@@ -163,14 +164,14 @@ func (nm *NetworkManager) UpdateAllToken() (int, error){
 
 	listAutoAppTokenInfo, err := nm.GetListAppTokenInfo()
 	if err != nil {
-		revel.AppLog.Errorf("cannot get list token info from app. Error %v", err)
+		log.Errorf("cannot get list token info from app. Error %v", err)
 	}
 
 	listAutoToken, err := StateM.RpcCaller.GetAllToken()
 	if err != nil {
 		return 0, errors.New(fmt.Sprintf("Cannot request list tokens. Error %v", err))
 	}
-	revel.AppLog.Infof("Current number of tokens remote: %v", len(listAutoToken))
+	log.Infof("Current number of tokens remote: %v", len(listAutoToken))
 	newTokens := make([]*models.Tokens, 0)
 	for _, autoToken := range listAutoToken {
 		if _, found := mapToken[autoToken.ID]; !found {
@@ -197,7 +198,7 @@ func (nm *NetworkManager) UpdateAllToken() (int, error){
 		}
 	}
 
-	revel.AppLog.Infof("Update %v new tokens from remote", len(newTokens))
+	log.Infof("Update %v new tokens from remote", len(newTokens))
 	return len(newTokens), nil
 }
 
@@ -212,21 +213,21 @@ func (nm *NetworkManager) GetListAppTokenInfo() (*rpccaller.AutoListAppTokenInfo
 
 	resp, err := http.Get(url)
 	if err != nil {
-		revel.AppLog.Errorf("cannot get list token info from app api. Error %v", err)
+		log.Errorf("cannot get list token info from app api. Error %v", err)
 		return nil, errors.New(fmt.Sprintf("cannot get list token info from app api. Error %v", err))
 	}
 	defer resp.Body.Close()
 
 	resultBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		revel.AppLog.Errorf("cannot read body from response. Error %v", err)
+		log.Errorf("cannot read body from response. Error %v", err)
 		return nil, errors.New(fmt.Sprintf("cannot read body from response. Error %v", err))
 	}
 
 	var listTokenInfo rpccaller.AutoListAppTokenInfo
 	err = json.Unmarshal(resultBytes, &listTokenInfo)
 	if err != nil {
-		revel.AppLog.Errorf("cannot unmarshal result. Error %v", err)
+		log.Errorf("cannot unmarshal result. Error %v", err)
 		return nil, errors.New(fmt.Sprintf("cannot unmarshal result. Error %v", err))
 	}
 	return &listTokenInfo, nil

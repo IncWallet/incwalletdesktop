@@ -85,22 +85,3 @@ func (sm *StateManager) SaveState() error {
 	}
 	return nil
 }
-
-///*
-//State controller
-//*/
-//type StateCtrl struct {
-//	*revel.Controller
-//}
-//
-///*
-//State info
-//*/
-//func (c StateCtrl) GetInfo() revel.Result {
-//	flag, code := IsStateFull()
-//	if !flag {
-//		return c.RenderJSON(responseJsonBuilder(errors.New("cannot show info, import or add account first"), "", code))
-//	}
-//	c.Response.Status = http.StatusCreated
-//	return c.RenderJSON(responseJsonBuilder(nil, stateJsonBuilder(), 0))
-//}

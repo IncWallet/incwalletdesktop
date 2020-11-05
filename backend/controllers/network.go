@@ -1,19 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/revel/revel"
-	"net/http"
-	"strconv"
+	log "github.com/sirupsen/logrus"
 	"wid/backend/database"
 )
-
-/*
-Network controller
-*/
-type NetworkCtrl struct {
-	*revel.Controller
-}
 
 type NetworkParam struct {
 	TokenName   string `json:"tokenname"`
@@ -29,20 +21,15 @@ type NetworkParam struct {
 Get Token by ID
 - token id
 */
-func (c NetworkCtrl) GetTokenByID() revel.Result {
-	networkParam := &NetworkParam{}
-	if err := c.Params.BindJSON(&networkParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	} else {
-		token, err := StateM.NetworkManager.GetTokenByID(networkParam.TokenID)
-		if err != nil {
-			revel.AppLog.Errorf("Cannot get token by id from database. Error %v", err)
-			c.Response.Status = http.StatusInternalServerError
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get token by id"), err.Error(), 0))
-		}
-		c.Response.Status = http.StatusCreated
-		return c.RenderJSON(responseJsonBuilder(nil, token, 0))
+func (NetworkCtrl) GetTokenByID(tokenID string) string {
+	token, err := StateM.NetworkManager.GetTokenByID(tokenID)
+	if err != nil {
+		log.Errorf("Cannot get token by id from database. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get token by id"), err.Error(), 0))
+		return string(res)
 	}
+	res, _ := json.Marshal(responseJsonBuilder(nil, token, 0))
+	return string(res)
 }
 
 /*
@@ -50,56 +37,38 @@ func (c NetworkCtrl) GetTokenByID() revel.Result {
 Get Token by Symbol
 - token symbol
 */
-func (c NetworkCtrl) GetTokenBySymbol() revel.Result {
-	networkParam := &NetworkParam{}
-	if err := c.Params.BindJSON(&networkParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	} else {
-		token, err := StateM.NetworkManager.GetTokenBySymbol(networkParam.TokenSymbol)
-		if err != nil {
-			revel.AppLog.Errorf("Cannot get token by id from database. Error %v", err)
-			c.Response.Status = http.StatusInternalServerError
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get token by symbol"), err.Error(), 0))
-		}
-		c.Response.Status = http.StatusCreated
-		return c.RenderJSON(responseJsonBuilder(nil, token, 0))
+func (NetworkCtrl) GetTokenBySymbol(tokenSymbol string) string {
+	token, err := StateM.NetworkManager.GetTokenBySymbol(tokenSymbol)
+	if err != nil {
+		log.Errorf("Cannot get token by id from database. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get token by symbol"), err.Error(), 0))
+		return string(res)
 	}
+	res, _ := json.Marshal(responseJsonBuilder(nil, token, 0))
+	return string(res)
 }
 
 /*
 /network/getalltokens
 Get All Token
 */
-func (c NetworkCtrl) GetAllToken() revel.Result {
-	var pageIndex, pageSize int
-	var err error
-	if c.Params.Get("pageindex") == "" && c.Params.Get("pagesize") == "" {
-		pageIndex = 1
-		pageSize = 1000000000
-	} else {
-		pageIndex, err = strconv.Atoi(c.Params.Get("pageindex"))
-		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get all token, pageindex is invalid"), err.Error(), 0))
-		}
-		pageSize, err = strconv.Atoi(c.Params.Get("pagesize"))
-		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get all token, pageSize is invalid"), err.Error(), 0))
-		}
-	}
-
+func (NetworkCtrl) GetAllToken(pageIndex, pageSize int) string {
 	size, err := database.Tokens.Find(nil).Count()
 	if err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get token size"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get token size"), err.Error(), 0))
+		return string(res)
 	}
 
 	mapTokens, err := StateM.NetworkManager.GetAllTokens(pageSize, pageIndex)
 	if err != nil {
-		revel.AppLog.Errorf("Cannot get token by id from database. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get token by id"), err.Error(), 0))
+		log.Errorf("Cannot get token by id from database. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get token by id"), err.Error(), 0))
+		return string(res)
 	}
 	result := &Result{
 		Size:   size,
 		Detail: mapTokens,
 	}
-	return c.RenderJSON(responseJsonBuilder(nil, result, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, result, 0))
+	return string(res)
 }

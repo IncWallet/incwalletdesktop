@@ -21,5 +21,4 @@ type AddressBook struct {
 	Name           string `json:"name" bson:"name"`
 	PaymentAddress string `json:"paymentaddress" bson:"paymentaddress"`
 	ChainName      string `json:"chainname" bson:"chainname"`
-	ChainType      string `json:"chaintype" bson:"chaintype"`
 }

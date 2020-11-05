@@ -107,7 +107,6 @@ func (am *AccountManager) ImportAccount(name, privateKeyStr, passphrase string) 
 		Name:           name,
 		PaymentAddress: newAccount.PaymentAddress,
 		ChainName:      "Incognito Chain",
-		ChainType:      StateM.NetworkManager.NetworkName,
 	}
 	if err = database.AddressBook.Insert(newAddressBook); err !=nil {
 		log.Warnf("cannot add new info to address book. Error %v", err)
@@ -121,10 +120,21 @@ func (am *AccountManager) ImportAccount(name, privateKeyStr, passphrase string) 
 	return nil
 }
 
-func (am *AccountManager) AddAccount(name string, masterKey *hdwallet.Key, walletID string, shardID int, passphrase string) (string, error) {
+func (am *AccountManager) AddAccount(name string, passphrase string) (string, error) {
+	wallet := &models.Wallet{}
+	if err := database.Wallet.Find(bson.M{"walletid": StateM.WalletManager.WalletID}).One(&wallet); err != nil {
+		return "", errors.New(fmt.Sprintf("cannot query wallet id %v info from db. Error %v", StateM.WalletManager.WalletID, err))
+	}
+
+	masterKey, err := StateM.WalletManager.SafeStore.DecryptMasterKey(wallet, passphrase)
+	if err != nil {
+		log.Errorf("cannot decrypt master key. Error %v", err)
+		return "", errors.New(fmt.Sprintf("cannot decrypt master key. Error %v", err))
+	}
+
 	lastAccount := &models.Account{}
 	query := bson.M{
-		"wallet": walletID,
+		"wallet": wallet.WalletId,
 	}
 
 	if count, err := database.Accounts.Find(bson.M{"name":name}).Count(); err == nil && count > 0 {
@@ -144,7 +154,7 @@ func (am *AccountManager) AddAccount(name string, masterKey *hdwallet.Key, walle
 			return "", err
 		}
 		publicKey := accountKW.KeySet.PaymentAddress.Pk
-		if int(common.GetShardIDFromPublicKey(publicKey)) == shardID {
+		if int(common.GetShardIDFromPublicKey(publicKey)) == wallet.ShardID {
 			privateKeyStr := accountKW.Base58CheckSerialize(common.PriKeyType)
 			privateKeyJson, err := StateM.WalletManager.SafeStore.EncryptPrivateKey([]byte(privateKeyStr), passphrase)
 			if err != nil {
@@ -157,7 +167,7 @@ func (am *AccountManager) AddAccount(name string, masterKey *hdwallet.Key, walle
 				PaymentAddress: accountKW.Base58CheckSerialize(common.PaymentAddressType),
 				ViewKey:        accountKW.Base58CheckSerialize(common.ReadonlyKeyType),
 				MiningKey:      hdwallet.GenerateMiningKey(accountKW.KeySet.PrivateKey),
-				Wallet:         walletID,
+				Wallet:         wallet.WalletId,
 				Crypto:         *privateKeyJson,
 			}
 			if err = database.Accounts.Insert(newAccount); err != nil {
@@ -168,7 +178,6 @@ func (am *AccountManager) AddAccount(name string, masterKey *hdwallet.Key, walle
 				Name:           name,
 				PaymentAddress: newAccount.PaymentAddress,
 				ChainName:      "Incognito Chain",
-				ChainType:      StateM.NetworkManager.NetworkName,
 			}
 			if err = database.AddressBook.Insert(newAddressBook); err !=nil {
 				log.Warnf("cannot add new info to address book. Error %v", err)
@@ -177,12 +186,12 @@ func (am *AccountManager) AddAccount(name string, masterKey *hdwallet.Key, walle
 			am.Account = newAccount
 			am.AccountID = newAccount.PublicKey
 			if err := StateM.SaveState(); err != nil {
-				return "", errors.New("Cannnot update State from Addaccount")
+				return "", errors.New(fmt.Sprintf("cannnot update State when add account. Error %v", err))
 			}
 			return privateKeyStr, nil
 		}
 	}
-	return "", errors.New("[WM] Cannot add account. MaxIndex error")
+	return "", errors.New("cannot add account. MaxIndex error")
 }
 
 func (am *AccountManager) SwitchAccount(name, passphrase string) (string, error) {
@@ -285,7 +294,7 @@ func (am *AccountManager) SyncAccount(publicKey, passphrase string) error {
 func (am *AccountManager) SyncAllAccounts(accounts []*models.Account, passphrase string) []error {
 	listError := make([]error, 0)
 	errChan := make(chan error)
-	for _, account := range accounts {
+	for i := range accounts {
 		go func(acc *models.Account, errChan chan error) {
 			privateKeyBytes, err := StateM.WalletManager.SafeStore.DecryptPrivateKey(&acc.Crypto, passphrase)
 			if err != nil {
@@ -302,7 +311,7 @@ func (am *AccountManager) SyncAllAccounts(accounts []*models.Account, passphrase
 			}
 
 			errChan <- nil
-		}(account, errChan)
+		}(accounts[i], errChan)
 	}
 
 	for range accounts {
@@ -358,6 +367,27 @@ func (am *AccountManager) GetUnspentOutputCoinR(keyWallet *hdwallet.KeyWallet, t
 		if ok && isSpent == false {
 			unspentCoins = append(unspentCoins, listCoin[index])
 		}
+	}
+	return unspentCoins, nil
+}
+
+func (am *AccountManager) GetUnspentOutputCoin(tokenID string) ([]*models.Coins, error) {
+	unspentCoins := make([]*models.Coins, 0)
+	var query bson.M
+	if tokenID == "" {
+		query = bson.M{
+			"publickey": StateM.AccountManage.AccountID,
+			"isspent": false,
+		}
+	} else {
+		query = bson.M{
+			"publickey": StateM.AccountManage.AccountID,
+			"tokenid": tokenID,
+			"isspent": false,
+		}
+	}
+	if err := database.Coins.Find(query).Sort("tokenid").All(&unspentCoins); err != nil {
+		return nil, err
 	}
 	return unspentCoins, nil
 }

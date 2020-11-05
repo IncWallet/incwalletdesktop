@@ -22,4 +22,5 @@ type PdeTradeHistory struct {
 	Status           string `json:"status" bson:"status"`
 	BlockHeight      uint64 `json:"blockheight" bson:"blockheight"`
 	LockTime         string `json:"locktime" bson:"locktime"`
+	BeaconHeight	 uint64 `json:"beaconheight" bson:"beaconheight"`
 }

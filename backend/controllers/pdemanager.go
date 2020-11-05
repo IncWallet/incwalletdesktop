@@ -222,59 +222,59 @@ func (pm *PdeManager) UpdatePdeTradeHistoryFromChain() error {
 	return nil
 }
 
-//func (pm *PdeManager) UpdatePdeTradeHistoryFromChainOld(limit int) error {
-//	if flag, _ := IsStateFull() ; !flag{
-//		return nil
-//	}
-//	if StateM.NetworkManager.Network.Name == common.Mainnet {
-//		return nil
-//	}
-//
-//	lastBeaconHeight := StateM.NetworkManager.BeaconState.Height
-//	fromBeaconHeight := StateM.NetworkManager.BestBlock[-1]
-//	tmp := new(models.PdeTradeHistory)
-//	if err := database.PdeHistory.Find(bson.M{}).Sort("-beaconheight").One(&tmp); err == nil {
-//		if tmp.BeaconHeight > fromBeaconHeight {
-//			fromBeaconHeight = tmp.BeaconHeight
-//		}
-//	}
-//
-//	if uint64(limit) < lastBeaconHeight- fromBeaconHeight{
-//		fromBeaconHeight = lastBeaconHeight - uint64(limit)
-//	}
-//	errorChan := make(chan error)
-//	for index := fromBeaconHeight + 1; index <= lastBeaconHeight; index ++ {
-//		go func(beaconHeight uint64, errorChan chan error) {
-//			tmpHistory, err := StateM.RpcCaller.GetPdeHistoryFromBeaconIns(beaconHeight)
-//			if err != nil {
-//				errorChan <- err
-//			} else {
-//				pc := database.PdeHistory.Bulk()
-//				bulkPdeHistory := make([]interface{}, 0)
-//				for i := range tmpHistory {
-//					bulkPdeHistory = append(bulkPdeHistory, &tmpHistory[i])
-//				}
-//				if len(tmpHistory) > 0 {
-//					pc.Insert(bulkPdeHistory...)
-//					_, err := pc.Run()
-//					if err != nil {
-//						errorChan <- err
-//					} else {
-//						errorChan <- nil
-//					}
-//				 } else {
-//					errorChan <- nil
-//				}
-//			}
-//		}(index, errorChan)
-//	}
-//
-//	for index := fromBeaconHeight + 1; index <= lastBeaconHeight; index ++ {
-//		err := <- errorChan
-//		if err != nil {
-//			log.Warnf("cannot insert bulk of pde history %v", err)
-//		}
-//	}
-//	StateM.NetworkManager.BestBlock[-1] = lastBeaconHeight
-//	return nil
-//}
+func (pm *PdeManager) UpdatePdeTradeHistoryFromBeaconIns(limit int) error {
+	if flag, _ := IsStateFull() ; !flag{
+		return nil
+	}
+	//if StateM.NetworkManager.Network.Name == common.Mainnet {
+	//	return nil
+	//}
+
+	lastBeaconHeight := StateM.NetworkManager.BeaconState.Height
+	fromBeaconHeight := StateM.NetworkManager.BestBlock[-1]
+	tmp := new(models.PdeTradeHistory)
+	if err := database.PdeHistory.Find(bson.M{}).Sort("-beaconheight").One(&tmp); err == nil {
+		if tmp.BeaconHeight > fromBeaconHeight {
+			fromBeaconHeight = tmp.BeaconHeight
+		}
+	}
+
+	if uint64(limit) < lastBeaconHeight- fromBeaconHeight{
+		fromBeaconHeight = lastBeaconHeight - uint64(limit)
+	}
+	errorChan := make(chan error)
+	for index := fromBeaconHeight + 1; index <= lastBeaconHeight; index ++ {
+		go func(beaconHeight uint64, errorChan chan error) {
+			tmpHistory, err := StateM.RpcCaller.GetPdeHistoryFromBeaconIns(beaconHeight)
+			if err != nil {
+				errorChan <- err
+			} else {
+				pc := database.PdeHistory.Bulk()
+				bulkPdeHistory := make([]interface{}, 0)
+				for i := range tmpHistory {
+					bulkPdeHistory = append(bulkPdeHistory, &tmpHistory[i])
+				}
+				if len(tmpHistory) > 0 {
+					pc.Insert(bulkPdeHistory...)
+					_, err := pc.Run()
+					if err != nil {
+						errorChan <- err
+					} else {
+						errorChan <- nil
+					}
+				 } else {
+					errorChan <- nil
+				}
+			}
+		}(index, errorChan)
+	}
+
+	for index := fromBeaconHeight + 1; index <= lastBeaconHeight; index ++ {
+		err := <- errorChan
+		if err != nil {
+			log.Warnf("cannot insert bulk of pde history %v", err)
+		}
+	}
+	StateM.NetworkManager.BestBlock[-1] = lastBeaconHeight
+	return nil
+}

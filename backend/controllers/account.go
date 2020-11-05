@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/revel/revel"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"math"
-	"net/http"
 	"wid/backend/database"
 	"wid/backend/lib/common"
 	"wid/backend/models"
 )
-
 
 type AccountParam struct {
 	Name       string `json:"name"`
@@ -23,15 +21,13 @@ type AccountParam struct {
 	PublicKey  string `json:"publickey"`
 }
 
-
 /*
 import Account
 - account name
 - private key
 - passphrase
 */
-func (App) ImportAccount(accountName, privateKey, passphrase string) string {
-
+func (AccountCtrl) ImportAccount(accountName, privateKey, passphrase string) string {
 	err := StateM.AccountManage.ImportAccount(accountName, privateKey, passphrase)
 	if err != nil {
 		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot import account"), err.Error(), 0))
@@ -52,8 +48,7 @@ Add Account
 - account name
 - passphrase
 */
-func (App) AddAccount(accountName, passphrase string) string {
-
+func (AccountCtrl) AddAccount(accountName, passphrase string) string {
 	privateKeyStr, err := StateM.AccountManage.AddAccount(accountName, passphrase)
 	if err != nil {
 		log.Warnf("cannot add account. Error %v", err)
@@ -74,7 +69,7 @@ func (App) AddAccount(accountName, passphrase string) string {
 - publickey
 - passphrase
 */
-func (App) SyncAccount(publicKey, passphrase string) string {
+func (AccountCtrl) SyncAccount(publicKey, passphrase string) string {
 	if flag, _ := IsStateFull() ; !flag{
 		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync account, import or add account first"), StateM.WalletManager.WalletID, 0))
 		return string(res)
@@ -89,187 +84,82 @@ func (App) SyncAccount(publicKey, passphrase string) string {
 }
 
 /*
-import Account
-- account name
-- private key
-- passphrase
-*/
-func (c App) ImportAccount() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	} else {
-		wallet := &models.Wallet{}
-		if err := database.Wallet.Find(bson.M{"walletid": StateM.WalletManager.WalletID}).One(&wallet); err != nil {
-			revel.AppLog.Errorf("Does not exist any Wallet in database. Error %v", err)
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot import account, create or import wallet first"), err.Error(), 0))
-		}
-
-		err := StateM.AccountManage.ImportAccount(accountParam.Name, accountParam.PrivateKey, accountParam.Passphrase)
-		if err != nil {
-			revel.AppLog.Errorf("Cannot add account to database. Error %v", err)
-			c.Response.Status = http.StatusInternalServerError
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot import account"), err.Error(), 0))
-		}
-
-		// start sync data
-		errChan := make(chan error)
-		go func(errChan chan error) {
-			err := JobSyncAccountFromRemote(accountParam.PrivateKey)
-			errChan <- err
-		}(errChan)
-
-		for {
-			if err := <- errChan; err != nil {
-				return c.RenderJSON(responseJsonBuilder(errors.New("cannot sync from import account"), err.Error(), 0))
-			}
-			break
-		}
-
-		c.Response.Status = http.StatusCreated
-		return c.RenderJSON(responseJsonBuilder(nil, infoJsonBuilder(StateM.AccountManage.Account, "", 0, 0 ,0), 0))
-	}
-}
-
-/*
-Add Account
-- account name
-- passphrase
-*/
-func (c AccountsCtrl) AddAccount() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	} else {
-		wallet := &models.Wallet{}
-		if err := database.Wallet.Find(bson.M{"walletid": StateM.WalletManager.WalletID}).One(&wallet); err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot add account, create or import wallet first"), err.Error(), 0))
-		}
-
-		masterKey, err := StateM.WalletManager.SafeStore.DecryptMasterKey(wallet, accountParam.Passphrase)
-		if err != nil {
-			revel.AppLog.Errorf("Cannot Decrypt Master Key. Error %v", err)
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot decrypt master key"), err.Error(), 0))
-		}
-
-		privateKeyStr, err := StateM.AccountManage.AddAccount(accountParam.Name, masterKey, wallet.WalletId, wallet.ShardID, accountParam.Passphrase)
-		if err != nil {
-			revel.AppLog.Errorf("Cannot add account to database. Error %v", err)
-			c.Response.Status = http.StatusInternalServerError
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot add account"), err.Error(), 0))
-		}
-
-		// start sync data
-		errChan := make(chan error)
-		go func(errChan chan error) {
-			err := JobSyncAccountFromRemote(privateKeyStr)
-			errChan <- err
-		}(errChan)
-
-		for {
-			if err := <- errChan; err != nil {
-				return c.RenderJSON(responseJsonBuilder(errors.New("cannot sync from add account"), err.Error(), 0))
-			}
-			break
-		}
-
-		c.Response.Status = http.StatusCreated
-		return c.RenderJSON(responseJsonBuilder(nil, infoJsonBuilder(StateM.AccountManage.Account, "", 0 ,0 ,0), 0))
-	}
-}
-
-/*
 Switch Account
 - account name
 - passphrase
 */
-func (c AccountsCtrl) SwitchAccount() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	} else {
-		if flag, _ := IsStateFull(); !flag {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot switch account, import or add account first"), "", 0))
-		}
-		// Switch Account
-		privateKeyStr, err := StateM.AccountManage.SwitchAccount(accountParam.Name, accountParam.Passphrase)
-		if err != nil {
-			c.Response.Status = http.StatusInternalServerError
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot switch account"), err.Error(), 0))
-		}
-
-		// start sync data
-		errChan := make(chan error)
-		go func(errChan chan error) {
-			err := JobSyncAccountFromRemote(privateKeyStr)
-			errChan <- err
-		}(errChan)
-
-		for {
-			if err := <- errChan; err != nil {
-				return c.RenderJSON(responseJsonBuilder(errors.New("cannot sync from switched account"), err.Error(), 0))
-			}
-			break
-		}
-
-		c.Response.Status = http.StatusCreated
-		return c.RenderJSON(responseJsonBuilder(nil, infoJsonBuilder(StateM.AccountManage.Account, "", 0 ,0 ,0), 0))
+func (AccountCtrl) SwitchAccount(name, passphrase string) string {
+	if flag, _ := IsStateFull() ; !flag{
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync account, import or add account first"), StateM.WalletManager.WalletID, 0))
+		return string(res)
 	}
+	privateKeyStr, err := StateM.AccountManage.SwitchAccount(name, passphrase)
+	if err != nil {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot switch account"), err.Error(), 0))
+		return string(res)
+	}
+
+	err = JobSyncAccountFromRemote(privateKeyStr)
+	if err != nil {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot sync from add account"), err.Error(), 0))
+		return string(res)
+	}
+
+	res, _ := json.Marshal(responseJsonBuilder(nil, infoJsonBuilder(StateM.AccountManage.Account, "", 0, 0 ,0), 0))
+	return string(res)
 }
 
 /*
-Balance Account
-- token id
+Sync All Account
+- passphrase
 */
-func (c AccountsCtrl) GetBalance() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	} else {
-		if flag, _ := IsStateFull(); !flag {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get balance, import or add account first"), "", 0))
-		}
-		mapBalance := make(map[string]uint64)
-		if len(accountParam.TokenID) == 0 {
-			mapBalance, err = StateM.AccountManage.GetBalance("","")
-		} else {
-			mapBalance, err = StateM.AccountManage.GetBalance("", accountParam.TokenID)
-		}
-
-		if err != nil {
-			revel.AppLog.Errorf("cannot retrieve balance account. Error %v", err)
-			c.Response.Status = http.StatusInternalServerError
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot retrieve balance"), err.Error(), 0))
-		}
-
-		c.Response.Status = http.StatusCreated
-		return c.RenderJSON(responseJsonBuilder(nil, balanceJsonBuilder(mapBalance), 0))
+func (AccountCtrl) SyncAllAccounts(passphrase string) string {
+	if flag, _ := IsStateFull() ; !flag{
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, 0))
+		return string(res)
 	}
+
+	var listAccounts []*models.Account
+	if err := database.Accounts.Find(bson.M{"wallet": StateM.WalletManager.WalletID}).All(&listAccounts); err != nil {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get all accounts info"), err.Error(), 0))
+		return string(res)
+	}
+
+	listErrors := StateM.AccountManage.SyncAllAccounts(listAccounts, passphrase)
+	if len(listErrors) >0  {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot sync all account"), listErrors, 0))
+		return string(res)
+	}
+
+	res, _ := json.Marshal(responseJsonBuilder(nil, "done", 0))
+	return string(res)
 }
 
 /*
 List Account
 */
-func (c AccountsCtrl) ListAccount() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
+func (AccountCtrl) ListAccount() string {
+	if flag, _ := IsStateFull() ; !flag{
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, 0))
+		return string(res)
 	}
-	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot list account, import or add account first"), "", 0))
-	}
+
 	var listAccounts []models.Account
 	if err := database.Accounts.Find(bson.M{"wallet": StateM.WalletManager.WalletID}).All(&listAccounts); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get accounts info"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get all accounts"), err.Error(), 0))
+		return string(res)
 	}
+
 	listTotalPRV := make([]float64, 0)
 	listTotalUSDT := make([]float64, 0)
 	listTotalBTC := make([]float64, 0)
 	for _, acc := range listAccounts {
 		mapBalance, err := StateM.AccountManage.GetBalance(acc.PublicKey,"")
 		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New(fmt.Sprintf("cannot get balance for account %v", acc.PublicKey)), err.Error(), 0))
+			res, _ := json.Marshal(responseJsonBuilder(errors.New(fmt.Sprintf("cannot get balance for account %v", acc.PublicKey)), err.Error(), 0))
+			return string(res)
 		}
+
 		totalPRV, _ := getTotalValueInPRV(mapBalance)
 		listTotalPRV = append(listTotalPRV, float64(totalPRV) / math.Pow10(9))
 		totalUSDT, _, _ := getExchangeRate(common.PRVID, common.USDTID, totalPRV, 0, true)
@@ -277,91 +167,54 @@ func (c AccountsCtrl) ListAccount() revel.Result {
 		totalBTC, _, _ := getExchangeRate(common.PRVID, common.BTCID, totalPRV, 0, true)
 		listTotalBTC = append(listTotalBTC, float64(totalBTC) / math.Pow10(9))
 	}
-
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, accountJsonBuilder(listAccounts, listTotalPRV, listTotalUSDT, listTotalBTC), 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, accountJsonBuilder(listAccounts, listTotalPRV, listTotalUSDT, listTotalBTC), 0))
+	return string(res)
 }
 
 /*
-Sync Account
-- publickey
-- passphrase
+Balance Account
+- token id
 */
-func (c AccountsCtrl) SyncAccount() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
+func (AccountCtrl) GetBalance(tokenID string) string {
+	if flag, err := IsStateFull() ; !flag{
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, err))
+		return string(res)
 	}
-	if flag, _ := IsStateFull() ; !flag{
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot start to sync account, import or add account first"), "", 0))
+	mapBalance := make(map[string]uint64)
+	var err error
+	if len(tokenID) == 0 {
+		mapBalance, err = StateM.AccountManage.GetBalance("","")
+	} else {
+		mapBalance, err = StateM.AccountManage.GetBalance("", tokenID)
 	}
-	publicKey := ""
-	if accountParam.PublicKey != "" {
-		publicKey = accountParam.PublicKey
-	}
-	err := StateM.AccountManage.SyncAccount(publicKey, accountParam.Passphrase)
+
 	if err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot start to sync account"), err.Error(), 0))
+		log.Errorf("cannot retrieve balance account. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot retrieve balance"), err.Error(), 0))
+		return string(res)
 	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, "done", 0))
-}
-
-/*
-Sync All Account
-- passphrase
-*/
-func (c AccountsCtrl) SyncAllAccounts() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	}
-	if flag, _ := IsStateFull() ; !flag{
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot start to sync account, import or add account first"), "", 0))
-	}
-
-	var listAccounts []*models.Account
-	if err := database.Accounts.Find(bson.M{"wallet": StateM.WalletManager.WalletID}).All(&listAccounts); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get accounts info"), err.Error(), 0))
-	}
-	listErrors := StateM.AccountManage.SyncAllAccounts(listAccounts, accountParam.Passphrase)
-	if len(listErrors) >0  {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot sync all account"), listErrors, 0))
-	}
-	return c.RenderJSON(responseJsonBuilder(nil, "done", 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, balanceJsonBuilder(mapBalance), 0))
+	return string(res)
 }
 
 /*
 List unspent coins
 - tokenid
 */
-func (c AccountsCtrl) ListUnspent() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
+func (AccountCtrl) ListUnspent(tokenID string) string {
+	if flag, err := IsStateFull() ; !flag{
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, err))
+		return string(res)
 	}
-	if flag, _ := IsStateFull() ; !flag{
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot list utxo, import or add account first"), "", 0))
+
+	listUnspentCoins, err := StateM.AccountManage.GetUnspentOutputCoin(tokenID)
+	if err != nil {
+		log.Errorf("cannot retrieve unspent coins from account. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot retrieve unspent coins from account"), err.Error(), 0))
+		return string(res)
 	}
-	var query bson.M
-	if accountParam.TokenID == "" {
-		query = bson.M{
-			"publickey": StateM.AccountManage.AccountID,
-			"isspent": false,
-		}
-	} else {
-		query = bson.M{
-			"publickey": StateM.AccountManage.AccountID,
-			"tokenid": accountParam.TokenID,
-			"isspent": false,
-		}
-	}
-	var listUnspent []models.Coins
-	if err := database.Coins.Find(query).Sort("tokenid").All(&listUnspent); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot load unpsent coin"), err.Error(), 0))
-	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, coinDetailJsonBuilder(listUnspent), 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, coinDetailJsonBuilder(listUnspentCoins), 0))
+	return string(res)
 }
 
 /*
@@ -369,20 +222,17 @@ Account info
 - passphrase
 - publicjey
 */
-func (c AccountsCtrl) GetInfo() revel.Result {
-	accountParam := &AccountParam{}
-	if err := c.Params.BindJSON(&accountParam); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), err.Error(), 0))
-	}
-
-	if flag, _ := IsStateFull() ; !flag{
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot show info, import or add account first"), "", 0))
+func (AccountCtrl) GetInfo(publicKey, passphrase string) string {
+	if flag, err := IsStateFull() ; !flag{
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot start to sync all account, import or add account first"), StateM.WalletManager.WalletID, err))
+		return string(res)
 	}
 
 	account := new(models.Account)
-	if accountParam.PublicKey != "" {
-		if err := database.Accounts.Find(bson.M{"publickey": accountParam.PublicKey}).One(&account); err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New(fmt.Sprintf("cannot get info for account %v", accountParam.PublicKey)), err.Error(), 0))
+	if publicKey != "" {
+		if err := database.Accounts.Find(bson.M{"publickey": publicKey}).One(&account); err != nil {
+			res, _ := json.Marshal(responseJsonBuilder(errors.New(fmt.Sprintf("cannot get info for account %v", publicKey)), err.Error(), 0))
+			return string(res)
 		}
 	} else {
 		account = StateM.AccountManage.Account
@@ -390,8 +240,10 @@ func (c AccountsCtrl) GetInfo() revel.Result {
 
 	mapBalance, err := StateM.AccountManage.GetBalance(account.PublicKey,"")
 	if err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New(fmt.Sprintf("cannot get balance for account %v", StateM.AccountManage.Account.PublicKey)), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New(fmt.Sprintf("cannot get balance for account %v", StateM.AccountManage.Account.PublicKey)), err.Error(), 0))
+		return string(res)
 	}
+
 	totalPRV, _ := getTotalValueInPRV(mapBalance)
 	totalPRVView := float64(totalPRV) / math.Pow10(9)
 
@@ -402,18 +254,18 @@ func (c AccountsCtrl) GetInfo() revel.Result {
 	totalBTCView := float64(totalBTC) / math.Pow10(9)
 
 	var privateKeyStr string
-	if accountParam.Passphrase != "" {
+	if passphrase != "" {
 		privateKey, err := StateM.WalletManager.SafeStore.DecryptPrivateKey(
 			&account.Crypto,
-			accountParam.Passphrase)
+			passphrase)
 		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get account info"), err.Error(), 0))
+			res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get account info"), err.Error(), 0))
+			return string(res)
 		}
 		privateKeyStr = string(privateKey)
 	} else {
 		privateKeyStr = "enter passphrase to view ... "
 	}
-
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, infoJsonBuilder(account, privateKeyStr, totalPRVView, totalUSDTView, totalBTCView), 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, infoJsonBuilder(account, privateKeyStr, totalPRVView, totalUSDTView, totalBTCView), 0))
+	return string(res)
 }

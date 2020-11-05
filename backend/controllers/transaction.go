@@ -1,21 +1,16 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/revel/revel"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
-	"net/http"
-	"strconv"
 	"wid/backend/database"
 	"wid/backend/lib/common"
 	"wid/backend/lib/hdwallet"
 	"wid/backend/lib/transaction"
 	"wid/backend/models"
 )
-
-type TransactionsCtrl struct {
-	*revel.Controller
-}
 
 type TxParam struct {
 	Receivers  map[string]uint64    `json:"receivers"`
@@ -38,13 +33,85 @@ type TxTradeParam struct {
 	Passphrase       string `json:"passphrase"`
 }
 
-type TxMineParam struct {
-	PublicKey      string `json:"publickey"`
-	MiningKey      string `json:"miningkey"`
-	PaymentAddress string `json:"paymentaddress"`
-	TxFee          uint64 `json:"txfee"`
-	Passphrase     string `json:"passphrase"`
+/* MINER TRANSACTION */
+/*
+Init Stop Auto Staking Tx
+- txfee
+- passphrase
+*/
+func (TransactionsCtrl) InitStopAutoStakingTransaction(txFee uint64, passphrase string) string {
+	if flag, _ := IsStateFull(); !flag {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
+	}
+
+	txManager := &TransactionManager{
+		am:        StateM.AccountManage,
+		rpcCaller: StateM.RpcCaller,
+	}
+	receiver := make(map[string]uint64)
+	receiver[common.BurnAddress2] = uint64(0)
+
+	committeePublicKey, err := hdwallet.GetMiningPubKey(StateM.AccountManage.Account.MiningKey, StateM.AccountManage.Account.PaymentAddress)
+	if err != nil {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, cannot get mining public key"), err.Error(), 0))
+		return string(res)
+	}
+
+	meta := transaction.NewStopAutoStakingMetadata(
+		committeePublicKey,
+	)
+
+	txHash, err := txManager.InitTransaction(
+		receiver,
+		txFee,
+		"",
+		meta,
+		common.PRVID,
+		false,
+		passphrase)
+	if err != nil {
+		log.Errorf("Cannot Init transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
+	}
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
 }
+
+func (TransactionsCtrl) InitWithdrawRewardTransaction(passphrase string) string {
+	if flag, _ := IsStateFull(); !flag {
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
+	}
+
+	txManager := &TransactionManager{
+		am:        StateM.AccountManage,
+		rpcCaller: StateM.RpcCaller,
+	}
+	receiver := make(map[string]uint64)
+	txFee := uint64(0)
+	keyWallet, _ := hdwallet.Base58CheckDeserialize(StateM.AccountManage.Account.PaymentAddress)
+	meta := transaction.NewWithdrawRewardMetadata(common.PRVID, keyWallet.KeySet.PaymentAddress)
+
+	txHash, err := txManager.InitTransaction(
+		receiver,
+		txFee,
+		"",
+		meta,
+		common.PRVID,
+		false,
+		passphrase)
+	if err != nil {
+		log.Errorf("Cannot Init transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
+	}
+
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
+}
+
 
 /* TRADE TRANSACTION */
 /*
@@ -57,13 +124,21 @@ Init Trade PRV Tx
 - trader address str
 - passphrase
 */
-func (c TransactionsCtrl) InitTradePRVTransaction() revel.Result {
-	txTradeParam := &TxTradeParam{}
-	if err := c.Params.BindJSON(&txTradeParam); err != nil {
-		return c.RenderJSON("Error: bad request")
+func (TransactionsCtrl) InitTradePRVTransaction(fromTokenID, toTokenID string, sendAmount, minReceiveAmount, tradingFee, txFee uint64, traderAddressStr, passphrase string) string {
+	txTradeParam := &TxTradeParam{
+		FromTokenID:      fromTokenID,
+		ToTokenID:        toTokenID,
+		SendAmount:       sendAmount,
+		MinReceiveAmount: minReceiveAmount,
+		TradingFee:       tradingFee,
+		TraderAddressStr: traderAddressStr,
+		TxFee:            txFee,
+		Passphrase:       passphrase,
 	}
+
 	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
 	}
 
 	txManager := &TransactionManager{
@@ -72,7 +147,6 @@ func (c TransactionsCtrl) InitTradePRVTransaction() revel.Result {
 	}
 	receiver := make(map[string]uint64)
 	receiver[common.BurnAddress2] = txTradeParam.SendAmount + txTradeParam.TradingFee
-	txFee := txTradeParam.TxFee
 	meta := transaction.NewPDETradeRequestMetadata(
 		txTradeParam.ToTokenID,
 		txTradeParam.FromTokenID,
@@ -91,11 +165,12 @@ func (c TransactionsCtrl) InitTradePRVTransaction() revel.Result {
 		false,
 		txTradeParam.Passphrase)
 	if err != nil {
-		revel.AppLog.Errorf("Cannot Init transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		log.Errorf("Cannot Init transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
 	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
 }
 
 /*
@@ -109,13 +184,21 @@ Init Trade Token Tx
 - token id
 - passphrase
 */
-func (c TransactionsCtrl) InitTradeTokenTransaction() revel.Result {
-	txTradeParam := &TxTradeParam{}
-	if err := c.Params.BindJSON(&txTradeParam); err != nil {
-		return c.RenderJSON("Error: bad request")
+func (TransactionsCtrl) InitTradeTokenTransaction(fromTokenID, toTokenID string, sendAmount, minReceiveAmount, tradingFee, txFee uint64, traderAddressStr, passphrase string) string {
+	txTradeParam := &TxTradeParam{
+		FromTokenID:      fromTokenID,
+		ToTokenID:        toTokenID,
+		SendAmount:       sendAmount,
+		MinReceiveAmount: minReceiveAmount,
+		TradingFee:       tradingFee,
+		TraderAddressStr: traderAddressStr,
+		TxFee:            txFee,
+		Passphrase:       passphrase,
 	}
+
 	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
 	}
 
 	txManager := &TransactionManager{
@@ -125,7 +208,6 @@ func (c TransactionsCtrl) InitTradeTokenTransaction() revel.Result {
 
 	receiver := make(map[string]uint64)
 	receiver[common.BurnAddress2] = txTradeParam.SendAmount + txTradeParam.TradingFee
-	txFee := txTradeParam.TxFee
 	meta := transaction.NewPDETradeRequestMetadata(
 		txTradeParam.ToTokenID,
 		txTradeParam.FromTokenID,
@@ -145,11 +227,12 @@ func (c TransactionsCtrl) InitTradeTokenTransaction() revel.Result {
 		false,
 		txTradeParam.Passphrase)
 	if err != nil {
-		revel.AppLog.Errorf("Cannot Init transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		log.Errorf("Cannot Init transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
 	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
 }
 
 /*
@@ -164,17 +247,26 @@ Init Trade Token Tx
 - iscross
 - passphrase
 */
-func (c TransactionsCtrl) InitTradeCrossTokenTransaction() revel.Result {
-	txTradeParam := &TxTradeParam{}
-	if err := c.Params.BindJSON(&txTradeParam); err != nil {
-		return c.RenderJSON("Error: bad request")
+func (TransactionsCtrl) InitTradeCrossTokenTransaction(fromTokenID, toTokenID string, sendAmount, minReceiveAmount, tradingFee, txFee uint64, traderAddressStr, passphrase string) string {
+	txTradeParam := &TxTradeParam{
+		FromTokenID:      fromTokenID,
+		ToTokenID:        toTokenID,
+		SendAmount:       sendAmount,
+		MinReceiveAmount: minReceiveAmount,
+		TradingFee:       tradingFee,
+		TraderAddressStr: traderAddressStr,
+		TxFee:            txFee,
+		Passphrase:       passphrase,
 	}
+
 	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
 	}
 
 	if txTradeParam.FromTokenID == common.PRVID || txTradeParam.ToTokenID == common.PRVID {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), "one of from or to token id is PRV", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), "one of from or to token id is PRV", 0))
+		return string(res)
 	}
 
 	txManager := &TransactionManager{
@@ -187,7 +279,7 @@ func (c TransactionsCtrl) InitTradeCrossTokenTransaction() revel.Result {
 
 	receiverToken := make(map[string]uint64)
 	receiverToken[common.BurnAddress2] = txTradeParam.SendAmount
-	txFee := txTradeParam.TxFee
+
 	meta := transaction.NewPDETradeCrossRequestMetadata(
 		txTradeParam.ToTokenID,
 		txTradeParam.FromTokenID,
@@ -207,11 +299,13 @@ func (c TransactionsCtrl) InitTradeCrossTokenTransaction() revel.Result {
 		false,
 		txTradeParam.Passphrase)
 	if err != nil {
-		revel.AppLog.Errorf("Cannot Init transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		log.Errorf("Cannot Init transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
 	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
+
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
 }
 
 /* TRANSFER TRANSACTION */
@@ -222,14 +316,18 @@ Init PRVTx
 - Info
 - Passphrase
 */
-func (c TransactionsCtrl) InitTransaction() revel.Result {
-	txParam := &TxParam{}
-	if err := c.Params.BindJSON(&txParam); err != nil {
-		return c.RenderJSON("Error: bad request")
+func (TransactionsCtrl) InitTransaction(receivers map[string]uint64, fee uint64, info string, passphrase string) string {
+	txParam := &TxParam{
+		Receivers:  receivers,
+		Fee:        fee,
+		Info:       info,
+		Passphrase: passphrase,
+		Metadata:   nil,
 	}
 
 	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
 	}
 
 	txManager := &TransactionManager{
@@ -246,11 +344,12 @@ func (c TransactionsCtrl) InitTransaction() revel.Result {
 		true,
 		txParam.Passphrase)
 	if err != nil {
-		revel.AppLog.Errorf("Cannot Init transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		log.Errorf("Cannot Init transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
 	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
 }
 
 /*
@@ -261,13 +360,19 @@ Init PRVTx Token
 - TokenID
 - Passphrase
 */
-func (c TransactionsCtrl) InitTokenTransaction() revel.Result {
-	txParam := &TxParam{}
-	if err := c.Params.BindJSON(&txParam); err != nil {
-		return c.RenderJSON("Error: bad request")
+func (TransactionsCtrl) InitTokenTransaction(receivers map[string]uint64, fee uint64, info, tokenID, passphrase string) string {
+	txParam := &TxParam{
+		Receivers:  receivers,
+		Fee:        fee,
+		Info:       info,
+		Passphrase: passphrase,
+		Metadata:   nil,
+		TokenID: tokenID,
 	}
+
 	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
 	}
 
 	txManager := &TransactionManager{
@@ -276,7 +381,8 @@ func (c TransactionsCtrl) InitTokenTransaction() revel.Result {
 	}
 
 	if txParam.TokenID == "" || txParam.TokenID == common.PRVID {
-		return c.RenderJSON(responseJsonBuilder(errors.New("bad request"), "Only accept pToken", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("bad request"), "Only accept pToken", 0))
+		return string(res)
 	}
 
 	txHash, err := txManager.InitTokenTransaction(
@@ -290,12 +396,15 @@ func (c TransactionsCtrl) InitTokenTransaction() revel.Result {
 		txParam.Passphrase)
 
 	if err != nil {
-		revel.AppLog.Errorf("Cannot Init token transfer transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		log.Errorf("Cannot Init token transfer transaction. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
+		return string(res)
 	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
+
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHash, 0))
+	return string(res)
 }
+
 
 /* GET INFORMATION */
 /*
@@ -303,28 +412,12 @@ func (c TransactionsCtrl) InitTokenTransaction() revel.Result {
 TxHistory
 - token id
 */
-func (c TransactionsCtrl) GetTxHistory() revel.Result {
+func (TransactionsCtrl) GetTxHistory(pageIndex, pageSize int, tokenID string) string {
 	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get tx history, import or add account first"), "", 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
+		return string(res)
 	}
 
-	var pageIndex, pageSize int
-	var err error
-	if c.Params.Get("pageindex") == "" && c.Params.Get("pagesize") == "" {
-		pageIndex = 1
-		pageSize = 1000000000
-	} else {
-		pageIndex, err = strconv.Atoi(c.Params.Get("pageindex"))
-		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get all token, pageindex is invalid"), err.Error(), 0))
-		}
-		pageSize, err = strconv.Atoi(c.Params.Get("pagesize"))
-		if err != nil {
-			return c.RenderJSON(responseJsonBuilder(errors.New("cannot get all token, pageSize is invalid"), err.Error(), 0))
-		}
-	}
-
-	tokenID := c.Params.Get("tokenid")
 	var query bson.M
 	if len(tokenID) != 0 {
 		query = bson.M{
@@ -338,17 +431,19 @@ func (c TransactionsCtrl) GetTxHistory() revel.Result {
 	}
 
 	var listTxHistory []models.TxHistory
-
 	size, err := database.TxHistory.Find(query).Count()
 	if err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot load tx history"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot load tx history"), err.Error(), 0))
+		return string(res)
 	}
 
 	if err := database.TxHistory.Find(query).Sort("-locktime").Skip((pageIndex - 1) * pageSize).Limit(pageSize).All(&listTxHistory); err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot load tx history"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot load tx history"), err.Error(), 0))
+		return string(res)
 	}
 
-	return c.RenderJSON(responseJsonBuilder(nil, txHistoryJsonBuilder(listTxHistory, size), 0))
+	res, _ := json.Marshal(responseJsonBuilder(nil, txHistoryJsonBuilder(listTxHistory, size), 0))
+	return string(res)
 }
 
 /*
@@ -356,98 +451,16 @@ func (c TransactionsCtrl) GetTxHistory() revel.Result {
 Tx Info
 - txhash
 */
-func (c TransactionsCtrl) GetTxInfo() revel.Result {
-	txParam := &TxParam{}
-	if err := c.Params.BindJSON(&txParam); err != nil {
-		return c.RenderJSON("Error: bad request")
-	}
+func (TransactionsCtrl) GetTxInfo(txHash string) string {
 
 	var tx *models.AutoTxByHash
-	tx, err := StateM.RpcCaller.GetAutoTxByHash(txParam.TxHash)
+	tx, err := StateM.RpcCaller.GetAutoTxByHash(txHash)
 	if err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot get tx info from txhash"), err.Error(), 0))
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get tx info from txhash"), err.Error(), 0))
+		return string(res)
 	}
-	return c.RenderJSON(responseJsonBuilder(nil, txInfoJsonBuilder(tx), 0))
+
+	res, _ := json.Marshal(responseJsonBuilder(nil, txInfoJsonBuilder(tx), 0))
+	return string(res)
 }
 
-/* MINER TRANSACTION */
-/*
-Init Stop Auto Staking Tx
-- txfee
-- passphrase
-*/
-func (c TransactionsCtrl) InitStopAutoStakingTransaction() revel.Result {
-	txMineParam := &TxMineParam{}
-	if err := c.Params.BindJSON(&txMineParam); err != nil {
-		return c.RenderJSON("Error: bad request")
-	}
-	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
-	}
-
-	txManager := &TransactionManager{
-		am:        StateM.AccountManage,
-		rpcCaller: StateM.RpcCaller,
-	}
-	receiver := make(map[string]uint64)
-	receiver[common.BurnAddress2] = uint64(0)
-	txFee := txMineParam.TxFee
-
-	committeePublicKey, err := hdwallet.GetMiningPubKey(StateM.AccountManage.Account.MiningKey, StateM.AccountManage.Account.PaymentAddress)
-	if err != nil {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, cannot get mining public key"), err.Error(), 0))
-	}
-
-	meta := transaction.NewStopAutoStakingMetadata(
-		committeePublicKey,
-	)
-
-	txHash, err := txManager.InitTransaction(
-		receiver,
-		txFee,
-		"",
-		meta,
-		common.PRVID,
-		false,
-		txMineParam.Passphrase)
-	if err != nil {
-		revel.AppLog.Errorf("Cannot Init transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
-	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
-}
-
-func (c TransactionsCtrl) InitWithdrawRewardTransaction() revel.Result {
-	txMineParam := &TxMineParam{}
-	if err := c.Params.BindJSON(&txMineParam); err != nil {
-		return c.RenderJSON("Error: bad request")
-	}
-	if flag, _ := IsStateFull(); !flag {
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction, import or add account first"), "", 0))
-	}
-
-	txManager := &TransactionManager{
-		am:        StateM.AccountManage,
-		rpcCaller: StateM.RpcCaller,
-	}
-	receiver := make(map[string]uint64)
-	txFee := uint64(0)
-	keyWallet, _ := hdwallet.Base58CheckDeserialize(StateM.AccountManage.Account.PaymentAddress)
-	meta := transaction.NewWithdrawRewardMetadata(common.PRVID, keyWallet.KeySet.PaymentAddress)
-
-	txHash, err := txManager.InitTransaction(
-		receiver,
-		txFee,
-		"",
-		meta,
-		common.PRVID,
-		false,
-		txMineParam.Passphrase)
-	if err != nil {
-		revel.AppLog.Errorf("Cannot Init transaction. Error %v", err)
-		return c.RenderJSON(responseJsonBuilder(errors.New("cannot create transaction"), err.Error(), 0))
-	}
-	c.Response.Status = http.StatusCreated
-	return c.RenderJSON(responseJsonBuilder(nil, txHash, 0))
-}
