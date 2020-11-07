@@ -1,0 +1,42 @@
+@import '../../@theme/styles/themes';
+@import '~@nebular/theme/styles/global/breakpoints';
+
+@include nb-install-component() {
+  ::ng-deep ng2-st-tbody-custom {
+    a.ng2-smart-action.ng2-smart-action-custom-custom {
+      width: 50px;
+      text-align: center;
+      font-size: 0.5em;
+
+      &:hover {
+        color: nb-theme(color-primary-500);
+      }
+    }
+  }
+
+  ::ng-deep ng2-st-tbody-edit-delete {
+    display: flex !important;
+    height: 0 !important;
+
+    a.ng2-smart-action.ng2-smart-action-edit-edit {
+      width: 50px;
+      text-align: center;
+      font-size: 0.5em;
+      margin-top: -25px !important;
+      margin-left: 40px !important;
+
+      @include media-breakpoint-down(xl) {
+        margin-top: -35px !important;
+      }
+    }
+  }
+
+  ::ng-deep nb-card-body .account-buttons {
+    display: inline-flex;
+
+    .form-group {
+      margin-right: 16px;
+    }
+  }
+
+}

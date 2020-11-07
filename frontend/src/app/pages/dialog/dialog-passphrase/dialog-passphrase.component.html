@@ -1,0 +1,19 @@
+<nb-card>
+  <nb-card-header>Please enter wallet password</nb-card-header>
+  <nb-card-body>
+    <div class="form-group">
+      <input
+        nbInput
+        type="password"
+        [ngModel]="vm.passphrase"
+        (ngModelChange)="vm.passphrase = $event"
+        fullWidth
+        placeholder="Password"
+      />
+    </div>
+  </nb-card-body>
+  <nb-card-footer>
+    <button nbButton status="basic" (click)="onCancel($event)" class="float-left">Cancel</button>
+    <button nbButton status="success" (click)="onSubmit($event)" class="float-right">OK</button>
+  </nb-card-footer>
+</nb-card>

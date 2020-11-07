@@ -1,16 +1,13 @@
 package main
 
 import (
+	"wid/backend/controllers"
+	"wid/backend/database"
+
 	"github.com/leaanthony/mewn"
 	log "github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails"
-	"wid/backend/controllers"
-	"wid/backend/database"
 )
-
-func basic() string {
-	return "World!"
-}
 
 func InitDB() {
 	if err := database.Init(DatabaseURI, DatabaseName); err != nil {
@@ -25,16 +22,17 @@ func InitDB() {
 
 func main() {
 
-	js := mewn.String("./frontend/dist/my-app/main.js")
-	css := mewn.String("./frontend/dist/my-app/styles.css")
+	js := mewn.String("./frontend/dist/main.js")
+	css := mewn.String("./frontend/dist/styles.css")
 
 	app := wails.CreateApp(&wails.AppConfig{
-		Width:  1024,
-		Height: 768,
-		Title:  "Incognito Desktop Wallet",
-		JS:     js,
-		CSS:    css,
-		Colour: "#131313",
+		Width:     1280,
+		Height:    780,
+		Resizable: true,
+		Title:     "Incognito Desktop Wallet",
+		JS:        js,
+		CSS:       css,
+		Colour:    "#131313",
 	})
 
 	InitDB()

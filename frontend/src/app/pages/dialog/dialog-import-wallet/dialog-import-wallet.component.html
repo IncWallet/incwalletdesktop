@@ -1,0 +1,38 @@
+<nb-card>
+  <nb-card-header>Import wallet</nb-card-header>
+  <nb-card-body>
+    <div class="form-group">
+      <label class="name caption-2 bold">Mnemonic</label>
+      <textarea
+        nbInput
+        type="text"
+        [ngModel]="vm.mnemonic"
+        (ngModelChange)="vm.mnemonic = $event"
+        fullWidth
+        placeholder="Mnemonic"
+      >
+      </textarea>
+    </div>
+    <div class="form-group">
+      <label class="name caption-2 bold">Network</label>
+      <nb-select size="large" fullWidth placeholder="Network" [(selected)]="vm.selectedNetwork" status="basic">
+        <nb-option *ngFor="let network of vm.networks" [value]="network.value"> {{ network.label }}</nb-option>
+      </nb-select>
+    </div>
+    <div class="form-group">
+      <label class="name caption-2 bold">Password</label>
+      <input
+        nbInput
+        type="password"
+        [ngModel]="vm.passphrase"
+        (ngModelChange)="vm.passphrase = $event"
+        fullWidth
+        placeholder="Password"
+      />
+    </div>
+  </nb-card-body>
+  <nb-card-footer>
+    <button nbButton status="basic" (click)="onCancel($event)" class="float-left">Cancel</button>
+    <button nbButton status="success" (click)="onSubmit($event)" class="float-right">OK</button>
+  </nb-card-footer>
+</nb-card>

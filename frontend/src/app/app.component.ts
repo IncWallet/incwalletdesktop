@@ -1,48 +1,19 @@
-import {Component} from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { AnalyticsService } from './@core/utils/analytics.service';
+import { SeoService } from './@core/utils/seo.service';
 
 @Component({
+  // tslint:disable-next-line: component-selector
   selector: '[id="app"]',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  template: '<router-outlet></router-outlet>',
 })
-export class AppComponent {
-  title = 'my-app';
+export class AppComponent implements OnInit {
 
-  clickMessage = '';
-
-  syncAccount() {
-    // @ts-ignore
-    window.backend.AccountCtrl.SyncAccount('', '12345').then(result =>
-      this.clickMessage = result
-    );
+  constructor(private analytics: AnalyticsService, private seoService: SeoService) {
   }
 
-  addAccount() {
-    // @ts-ignore
-    window.backend.AccountCtrl.AddAccount('account4', '12345').then(result =>
-      this.clickMessage = result
-    );
+  ngOnInit(): void {
+    this.analytics.trackPageViews();
+    this.seoService.trackCanonicalChanges();
   }
-
-  importAccount() {
-    // @ts-ignore
-    window.backend.AccountCtrl.ImportAccount('main pde account', 'empty', '12345').then(result =>
-      this.clickMessage = result
-    );
-  }
-
-  createWallet() {
-    // @ts-ignore
-    window.backend.WalletCtrl.CreateWallet(256, '12345', 'mainnet').then(result =>
-      this.clickMessage = result
-    );
-  }
-
-  updateTokens() {
-    // @ts-ignore
-    window.backend.NetworkCtrl.UpdateAllTokens().then(result =>
-      this.clickMessage = result
-    );
-  }
-
 }
