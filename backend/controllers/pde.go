@@ -93,6 +93,8 @@ func (PdeCtrl) GetPdeCrossPoolPairPrice(fromTokenIDStr, toTokenIDStr string, exc
 
 func (p *PdeCtrl) GetPdeTradeHistory(pageIndex, pageSize int, tokenID1, tokenID2 string) string {
 	resp, err := http.Get(fmt.Sprintf("%v/pde/txhistory?pagesize=%v&pageindex=%v", common.URLService, pageSize, pageIndex))
+	fmt.Println(fmt.Sprintf("%v/pde/txhistory?pagesize=%v&pageindex=%v", common.URLService, pageSize, pageIndex))
+
 	if err != nil {
 		log.Errorf("cannot get list token info from app api. Error %v", err)
 		res, _ := json.Marshal(responseJsonBuilder(errors.New("bad request"),"cannot get pde history", 0))
@@ -106,6 +108,7 @@ func (p *PdeCtrl) GetPdeTradeHistory(pageIndex, pageSize int, tokenID1, tokenID2
 		res, _ := json.Marshal(responseJsonBuilder(errors.New("bad request"),"cannot read body from response", 0))
 		return string(res)
 	}
-
+	fmt.Println(string(resultBytes))
+	//panic("OK")
 	return string(resultBytes)
 }

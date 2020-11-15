@@ -27,34 +27,29 @@ export class PdeHistoryComponent implements OnInit {
     this.loadPdeHistory();
   }
   onRefreshGrid() {
-    this.loadPdeHistory();
+    // this.loadPdeHistory();
+    this.pdeHistoryResource.setPage(1);
   }
   async loadPdeHistory() {
     const res = await this.pdeClient
-      .history()
+      .history(1,500)
       .toPromise()
       .catch((err) => err);
-    if (!IsResponseError(res)) {
-      if (!IsUseless(res.Msg)) {
-        for (let index = 0; index < res.Msg.length; index++) {
-          const element = res.Msg[index];
-          element.id = `#${index + 1}`;
-        }
-      }
-      this.pdeHistoryResource.load(res.Msg);
-    }
+    // console.log(res.Msg.Detail);
+    this.pdeHistoryResource = res.Msg.Detail;
+
   }
   getPdeHistorySettings(): any {
     const settings = {
       hideSubHeader: false,
       actions: false,
       columns: {
-        id: {
-          title: '#',
-          type: 'string',
-          filter: false,
-          addable: false,
-        },
+        // id: {
+        //   title: '#',
+        //   type: 'string',
+        //   filter: false,
+        //   addable: false,
+        // },
         LockTime: {
           title: 'Lock Time',
           type: 'string',
@@ -69,6 +64,9 @@ export class PdeHistoryComponent implements OnInit {
           title: 'Send Amount',
           type: 'number',
           filter: false,
+          valuePrepareFunction: (value, row, cell) => {
+            return parseInt(value, 10) / (10 ** parseInt(row.SendTokenDecimal, 10));
+          },
         },
         ReceiveTokenSymbol: {
           title: 'Receive',
@@ -79,6 +77,9 @@ export class PdeHistoryComponent implements OnInit {
           title: 'Receiver Amount',
           type: 'number',
           filter: false,
+          valuePrepareFunction: (value, row, cell) => {
+            return parseInt(value, 10) / (10 ** parseInt(row.ReceiveTokenDecimal, 10));
+          },
         },
         Status: {
           title: 'Status',
@@ -98,7 +99,7 @@ export class PdeHistoryComponent implements OnInit {
         class: 'table table-bordered',
       },
       pager: {
-        perPage: 1000,
+        perPage: 50,
       },
     };
 
