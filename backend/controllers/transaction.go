@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"wid/backend/database"
@@ -443,6 +444,7 @@ func (TransactionsCtrl) GetTxHistory(pageIndex, pageSize int, tokenID string) st
 	}
 
 	res, _ := json.Marshal(responseJsonBuilder(nil, txHistoryJsonBuilder(listTxHistory, size), 0))
+	fmt.Println(string(res))
 	return string(res)
 }
 

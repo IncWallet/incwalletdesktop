@@ -1,17 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {from, Observable} from 'rxjs';
-import { PdeHistoryListRes } from './models/pde.model';
+import {Transaction} from "./models/transaction.model";
 
 @Injectable({ providedIn: 'root' })
-export class PdeClient {
+export class TransactionClient {
 
   constructor(protected httpClient: HttpClient) {}
-  history(pageindex: number, pagesize: number): Observable<PdeHistoryListRes> {
+  history(pageindex: number, pagesize: number): Observable<any> {
     // @ts-ignore
     return  from (new Promise((resolve,reject) => {
       // @ts-ignore
-      window.backend.PdeCtrl.GetPdeTradeHistory(pageindex,pagesize,"","").then(res => {
+      window.backend.TransactionsCtrl.GetTxHistory(pageindex,pagesize,"").then(res => {
         resolve(JSON.parse(res));
       }).catch(err => reject(JSON.parse(err)));
     }));

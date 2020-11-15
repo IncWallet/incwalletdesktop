@@ -89,7 +89,7 @@ export class MinerComponent implements OnInit {
         class: 'table table-bordered',
       },
       pager: {
-        perPage: 1,
+        perPage: 50,
       },
     };
 
