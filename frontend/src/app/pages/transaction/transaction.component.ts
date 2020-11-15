@@ -88,13 +88,13 @@ export class TransactionComponent implements OnInit {
         },
         Fee: {
           title: 'Fee (Nano)',
-          type: 'custom',
+          type: 'number',
           filter: false,
           // renderComponent: MashComponent,
       },
         Amount: {
           title: 'Amount',
-          type: 'custom',
+          type: 'number',
           filter: false,
           valuePrepareFunction: (value, row, cell) => {
             return parseInt(value, 10) / (10 ** parseInt(row.TokenDecimal, 10));
