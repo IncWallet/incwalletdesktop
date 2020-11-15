@@ -3,9 +3,11 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"gopkg.in/mgo.v2/bson"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"math"
-	"wid/backend/database"
+	"net/http"
 	"wid/backend/lib/common"
 	"wid/backend/models"
 )
@@ -90,39 +92,20 @@ func (PdeCtrl) GetPdeCrossPoolPairPrice(fromTokenIDStr, toTokenIDStr string, exc
 }
 
 func (p *PdeCtrl) GetPdeTradeHistory(pageIndex, pageSize int, tokenID1, tokenID2 string) string {
-	var pdeHistory []*models.PdeTradeHistory
-	query := bson.M{}
-
-	if tokenID1 != "" && tokenID2 != "" {
-		query1 := bson.M{
-			"fromtokenidstr": tokenID1,
-			"totokenidstr": tokenID2,
-		}
-		query2 := bson.M{
-			"fromtokenidstr": tokenID2,
-			"totokenidstr": tokenID1,
-		}
-		query = bson.M{"$or": []bson.M{query1, query2}}
-	} else {
-		if tokenID1 != "" {
-			query = bson.M{"$or": []bson.M{bson.M{"fromtokenidstr": tokenID1}, bson.M{"totokenidstr": tokenID1}}}
-		}
-		if tokenID2 != "" {
-			query = bson.M{"$or": []bson.M{bson.M{"fromtokenidstr": tokenID2}, bson.M{"totokenidstr": tokenID2}}}
-		}
-	}
-
-	size, err := database.PdeHistory.Find(query).Count()
+	resp, err := http.Get(fmt.Sprintf("%v/pde/txhistory?pagesize=%v&pageindex=%v", common.URLService, pageSize, pageIndex))
 	if err != nil {
-		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get total pde history"), err.Error(), 0))
+		log.Errorf("cannot get list token info from app api. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("bad request"),"cannot get pde history", 0))
+		return string(res)
+	}
+	defer resp.Body.Close()
+
+	resultBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("cannot read body from response. Error %v", err)
+		res, _ := json.Marshal(responseJsonBuilder(errors.New("bad request"),"cannot read body from response", 0))
 		return string(res)
 	}
 
-	err = database.PdeHistory.Find(query).Sort("-locktime").Skip((pageIndex-1) * pageSize).Limit(pageSize).All(&pdeHistory)
-	if err != nil {
-		res, _ := json.Marshal(responseJsonBuilder(errors.New("cannot get pde history"), err.Error(), 0))
-		return string(res)
-	}
-	res, _ := json.Marshal(responseJsonBuilder(nil, pdeTradeHistoryJsonBuilder(pdeHistory, size), 0))
-	return string(res)
+	return string(resultBytes)
 }

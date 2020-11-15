@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/incognitochain/incognito-chain/wallet"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"net/http"
 	"testing"
 	"wid/backend/lib/base58"
 	"wid/backend/lib/common"
 	"wid/backend/lib/crypto"
 	"wid/backend/lib/hdwallet"
-	"wid/backend/lib/transaction"
 	"wid/backend/models"
 )
 // temp account
@@ -19,20 +20,34 @@ var paymentAddStr = "12S4CvTpc5wHbNXyvdzPktYMGCZcj3pSTCUS73DCShRz3kTmsjorQHdhjmh
 var readKey = "13hfo5qjMt1gc6CTYiAkbaXHBvbow4oxZQgFN1snXeZDy8QBDBY7VrFPhH9feVg1pYkvRd8tkb9ui6C2b6vBGjnDVnumgkuE5dhzpyy"
 var tokenID = "0000000000000000000000000000000000000000000000000000000000000004"
 
+
 func TestRPCService_GetAutoTxByHash(t *testing.T) {
-	hash := ""
-	rpcCaller := new(RPCService)
-	rpcCaller.InitTestnet(common.URLTestnet)
-	tx, err := rpcCaller.GetAutoTxByHash(hash)
-	fmt.Println(err)
-	metaDataStr := tx.Result.Metadata
-	meta := new(transaction.PDETradeRequest)
-	json.Unmarshal([]byte(metaDataStr), meta)
-	fmt.Println(meta.TraderAddressStr)
-	b, err := rpcCaller.GetTransactionByHash(hash)
-	var tmp models.AutoTxByHash
-	err = json.Unmarshal(b, &tmp)
-	fmt.Println(err)
+	//hash := ""
+	//rpcCaller := new(RPCService)
+	//rpcCaller.InitTestnet(common.URLTestnet)
+	//tx, err := rpcCaller.GetAutoTxByHash(hash)
+	//fmt.Println(err)
+	//metaDataStr := tx.Result.Metadata
+	//meta := new(transaction.PDETradeRequest)
+	//json.Unmarshal([]byte(metaDataStr), meta)
+	//fmt.Println(meta.TraderAddressStr)
+	//b, err := rpcCaller.GetTransactionByHash(hash)
+	//var tmp models.AutoTxByHash
+	//err = json.Unmarshal(b, &tmp)
+	//fmt.Println(err)
+
+	resp, err := http.Get(fmt.Sprintf("%v/pde/txhistory?pagesize=%v&pageindex=%v", common.URLService, 1, 1))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	resultBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(string(resultBytes))
 }
 
 func TestParsePrivateKey (t *testing.T) {

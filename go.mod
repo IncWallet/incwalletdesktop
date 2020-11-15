@@ -13,6 +13,7 @@ require (
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
 	github.com/revel/revel v1.0.0
 	github.com/sirupsen/logrus v1.4.1
+	github.com/stretchr/testify v1.5.1
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/wailsapp/wails v1.8.0

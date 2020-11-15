@@ -147,6 +147,7 @@ const (
 	URLMainnet = "http://167.86.99.232:9334"
 	URLTestnet = "https://testnet.incognito.org/fullnode"
 	URLLocal   = "http://localhost:9334"
+	URLService = "http://167.86.99.232"
 )
 
 const (
