@@ -22,6 +22,7 @@ export class MinerComponent implements OnInit {
   }
   onRefreshGrid() {
     this.loadMiner();
+    this.minerResource.setPage(1);
   }
   async loadMiner() {
     const res = await this.minerClient
@@ -37,6 +38,7 @@ export class MinerComponent implements OnInit {
       }
       this.minerResource.load(res.Msg);
     }
+    // this.minerResource.setPaging(2,1,true);
   }
   getMinerSettings(): any {
     const settings = {
@@ -87,7 +89,7 @@ export class MinerComponent implements OnInit {
         class: 'table table-bordered',
       },
       pager: {
-        perPage: 1000,
+        perPage: 1,
       },
     };
 
