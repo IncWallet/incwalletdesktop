@@ -9,6 +9,8 @@ import { TransactionComponent } from './transaction/transaction.component';
 import { SettingComponent } from './setting/setting.component';
 import { NotFoundComponent } from './not-found/not-found.component';
 import { AccountResolver } from './account/account.resolver';
+import {MinerComponent} from "./miner/miner.component";
+import {PdeHistoryComponent} from "./pde/pde-history/pde-history.component";
 
 const routes: Routes = [{
   path: '',
@@ -32,8 +34,16 @@ const routes: Routes = [{
       component: TransactionComponent,
     },
     {
+      path: 'miner',
+      component: MinerComponent,
+    },
+    {
       path: 'setting',
       component: SettingComponent,
+    },
+    {
+      path: 'pde-history',
+      component: PdeHistoryComponent,
     },
     {
       path: '',

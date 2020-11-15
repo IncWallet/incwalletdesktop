@@ -38,4 +38,20 @@ export const MENU_ITEMS: NbMenuItem[] = [
     icon: 'keypad-outline',
     link: '/pages/setting',
   },
+  {
+    title: 'Miner',
+    icon: 'hash-outline',
+    link: '/pages/miner',
+  },
+  {
+    title: 'Pdex',
+    icon: 'hard-drive-outline',
+    children: [
+      {
+        title: 'History',
+        link: '/pages/pde-history',
+        icon: 'file-text-outline',
+      },
+    ],
+  },
 ];

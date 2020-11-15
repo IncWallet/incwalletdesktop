@@ -18,6 +18,8 @@ import { DialogCreateAccountComponent } from './dialog/dialog-create-account/dia
 import { DialogImportAccountComponent } from './dialog/dialog-import-account/dialog-import-account.component';
 import { DialogWalletComponent } from './dialog/dialog-wallet/dialog-wallet.component';
 import { DialogImportWalletComponent } from './dialog/dialog-import-wallet/dialog-import-wallet.component';
+import {MinerComponent} from "./miner/miner.component";
+import {PdeHistoryComponent} from "./pde/pde-history/pde-history.component";
 
 @NgModule({
   imports: [
@@ -43,6 +45,8 @@ import { DialogImportWalletComponent } from './dialog/dialog-import-wallet/dialo
     DialogImportAccountComponent,
     DialogWalletComponent,
     DialogImportWalletComponent,
+    MinerComponent,
+    PdeHistoryComponent,
   ],
   providers: [
     AccountResolver,

@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.4.1
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0
-	github.com/wailsapp/wails v1.10.0-pre1
+	github.com/wailsapp/wails v1.8.0
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
