@@ -1,1 +1,16 @@
-<p>transaction works!</p>
+<div class="row">
+  <div class="col-md-12">
+    <nb-card>
+      <nb-card-header>
+        History
+        <button nbButton ghost status="basic" class="float-right" title="Refresh" (click)="onRefreshGrid()">
+          <nb-icon icon="sync"></nb-icon>
+        </button>
+      </nb-card-header>
+      <nb-card-body>
+        <ng2-smart-table [settings]="settings" [source]="source">
+        </ng2-smart-table>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>

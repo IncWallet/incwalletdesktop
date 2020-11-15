@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tyler-smith/go-bip39"
 	"testing"
+	"wid/backend/lib/common"
 )
 
 func TestNewMasterKey(t *testing.T) {
