@@ -27,8 +27,8 @@ export class PdeHistoryComponent implements OnInit {
     this.loadPdeHistory();
   }
   onRefreshGrid() {
-    // this.loadPdeHistory();
-    this.pdeHistoryResource.setPage(1);
+    this.loadPdeHistory();
+    // this.pdeHistoryResource.setPage(1);
   }
   async loadPdeHistory() {
     const res = await this.pdeClient

@@ -14,6 +14,7 @@ import {NotFoundComponent} from './pages/not-found/not-found.component';
 import {AccountResolver} from './pages/account/account.resolver';
 import {MinerComponent} from "./pages/miner/miner.component";
 import {PdeHistoryComponent} from "./pages/pde/pde-history/pde-history.component";
+import {WalletDetailComponent} from "./pages/wallet-detail/wallet-detail.component";
 
 export const routes: Routes = [
   {
@@ -21,6 +22,10 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     component: PagesComponent,
     children: [
+      {
+        path: 'wallet-detail',
+        component: WalletDetailComponent,
+      },
       {
         path: 'account',
         component: AccountComponent,

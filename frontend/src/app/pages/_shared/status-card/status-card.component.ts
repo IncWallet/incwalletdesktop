@@ -23,5 +23,6 @@ export class StatusCardComponent {
   @Input() title: string;
   @Input() description: string;
   @Input() type: string;
+  @Input() mash: boolean;
   @Input() on = true;
 }

@@ -20,6 +20,9 @@ import { DialogWalletComponent } from './dialog/dialog-wallet/dialog-wallet.comp
 import { DialogImportWalletComponent } from './dialog/dialog-import-wallet/dialog-import-wallet.component';
 import {MinerComponent} from "./miner/miner.component";
 import {PdeHistoryComponent} from "./pde/pde-history/pde-history.component";
+import {DialogAccountDetailComponent} from "./dialog/dialog-account-detail/dialog-account-detail.component";
+import {MashComponent} from "./_shared/mash/mash.component";
+import {DialogUnspentCoinComponent} from "./dialog/dialog-unspent-coin/dialog-unspent-coin.component";
 
 @NgModule({
   imports: [
@@ -47,6 +50,10 @@ import {PdeHistoryComponent} from "./pde/pde-history/pde-history.component";
     DialogImportWalletComponent,
     MinerComponent,
     PdeHistoryComponent,
+    DialogAccountDetailComponent,
+    MashComponent,
+    DialogUnspentCoinComponent,
+
   ],
   providers: [
     AccountResolver,

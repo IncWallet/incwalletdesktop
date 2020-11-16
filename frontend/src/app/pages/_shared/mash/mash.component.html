@@ -1,0 +1,8 @@
+<div *ngIf="isHideDataMash; else mashView" class="d-flex align-content-start flex-wrap">
+  {{value}}
+</div>
+<ng-template #mashView>
+  <div class="d-flex align-content-start flex-wrap">
+    *********
+  </div>
+</ng-template>

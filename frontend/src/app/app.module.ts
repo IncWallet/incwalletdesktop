@@ -25,10 +25,13 @@ import { AuthGuard } from './infrastructure/auth.guard';
 import { APP_BASE_HREF } from '@angular/common';
 import { NgxAuthModule } from './infrastructure/auth.module';
 import { PagesModule } from './pages/pages.module';
+import { WalletDetailComponent } from './pages/wallet-detail/wallet-detail.component';
+import {Ng2SmartTableModule} from "ng2-smart-table";
 
 @NgModule({
   declarations: [
     AppComponent,
+    WalletDetailComponent,
   ],
   imports: [
     BrowserModule,
@@ -44,10 +47,10 @@ import { PagesModule } from './pages/pages.module';
     NbDialogModule.forRoot(),
     NbWindowModule.forRoot(),
     ToastrModule.forRoot({
-        timeOut: 4000,
-        positionClass: 'toast-top-right',
-        preventDuplicates: true,
-        autoDismiss: true,
+      timeOut: 4000,
+      positionClass: 'toast-top-right',
+      preventDuplicates: true,
+      autoDismiss: true,
     }),
     NbChatModule.forRoot({
       messageGoogleMapKey: 'AIzaSyA_wNuCzia92MAmdLRzmqitRGvCF7wCZPY',
@@ -56,6 +59,8 @@ import { PagesModule } from './pages/pages.module';
     ThemeModule.forRoot(),
     NgxAuthModule,
     PagesModule,
+    Ng2SmartTableModule,
+
   ],
   providers: [
     [

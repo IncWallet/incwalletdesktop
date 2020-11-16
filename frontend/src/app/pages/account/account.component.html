@@ -1,39 +1,18 @@
 <div class="row">
-  <div class="col-xxxl-6 col-md-6">
-    <ngx-status-card [title]="'Total balance'" [description]="'0.000000000000'" [type]="'info'">
+  <div class="col-xxxl-4 col-md-4">
+    <ngx-status-card [title]="'Total Balance in PRV'" [description]="vm.ValuePRV || '0.000000000000'" [mash]="!isHideDataMash()" [type]="'info'">
       <i [ngClass]="'nb-lightbulb'"></i>
     </ngx-status-card>
   </div>
-  <div class="col-xxxl-6 col-md-6">
-    <ngx-status-card [title]="'Total balance in USDT'" [description]="'0.000000000000'" [type]="'warning'">
+  <div class="col-xxxl-4 col-md-4">
+    <ngx-status-card [title]="'Total Balance in USDT'" [description]="vm.ValueUSDT || '0.000000000000'" [mash]="!isHideDataMash()" [type]="'success'">
       <i [ngClass]="'nb-roller-shades'"></i>
     </ngx-status-card>
   </div>
-</div>
-
-<div class="row">
-  <div class="col-md-12">
-    <nb-card>
-      <nb-card-header>
-        Accounts
-      </nb-card-header>
-    
-      <nb-card-body>
-        <div class="row">
-          <div class="col-md-12 account-buttons">
-            <div class="form-group">
-              <button nbButton status="success" (click)="onCreateAccount($event)" class="float-left">Create account</button>
-            </div>
-            <div class="form-group">
-              <button nbButton status="success" (click)="onImportAccount($event)" class="">Import account</button>
-            </div>
-          </div>
-        </div>
-        <ng2-smart-table [settings]="settings" [source]="source" (createConfirm)="onAddConfirm($event)" (custom)="onCustomAction($event)"
-        (editConfirm)="onEditConfirm($event)">
-        </ng2-smart-table>
-      </nb-card-body>
-    </nb-card>
+  <div class="col-xxxl-4 col-md-4">
+    <ngx-status-card [title]="'Total Balance in BTC'" [description]="vm.ValueBTC || '0.000000000000'" [mash]="!isHideDataMash()" [type]="'warning'">
+      <i [ngClass]="'nb-sunny'"></i>
+    </ngx-status-card>
   </div>
 </div>
 
@@ -42,10 +21,12 @@
     <nb-card>
       <nb-card-header>
         Balance
+        <button nbButton ghost status="basic" class="float-right" title="Refresh"
+                (click)="onRefreshGrid('balance')"><nb-icon icon="sync"></nb-icon></button>
       </nb-card-header>
-    
+
       <nb-card-body>
-        <ng2-smart-table [settings]="balanceSettings" [source]="balanceSource">
+        <ng2-smart-table [settings]="balanceSettings" [source]="balanceSource" >
         </ng2-smart-table>
       </nb-card-body>
     </nb-card>

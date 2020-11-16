@@ -2,26 +2,16 @@ import { NbMenuItem } from '@nebular/theme';
 
 export const MENU_ITEMS: NbMenuItem[] = [
   {
+    title: 'Wallet',
+    icon: 'credit-card-outline',
+    link: '/pages/wallet-detail',
+    home: true,
+  },
+  {
     title: 'Account',
     icon: 'shopping-cart-outline',
     link: '/pages/account',
     home: true,
-  },
-  {
-    title: 'Send',
-    icon: 'shuffle-2-outline',
-    children: [
-      {
-        title: 'Process',
-        link: '/pages/send',
-        icon: 'shuffle-2-outline',
-      },
-      {
-        title: 'Address book',
-        link: '/pages/address-book',
-        icon: 'map-outline',
-      },
-    ],
   },
   {
     title: 'Transactions',

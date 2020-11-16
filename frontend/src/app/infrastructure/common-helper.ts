@@ -40,3 +40,25 @@ export class Auth {
   }
 }
 
+/*
+ * Storage
+ */
+export class LocalStorage {
+  static getValue(key: string) {
+    const value = JSON.parse(localStorage.getItem(key));
+    return value;
+  }
+
+  static setValue(key: string, value: any) {
+    localStorage.removeItem(key);
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  static removeKey(key: string) {
+    localStorage.removeItem(key);
+  }
+
+  static hasKey(key: string) {
+    return localStorage.getItem(key) !== null;
+  }
+}

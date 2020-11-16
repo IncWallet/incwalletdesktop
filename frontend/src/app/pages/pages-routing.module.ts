@@ -11,11 +11,16 @@ import { NotFoundComponent } from './not-found/not-found.component';
 import { AccountResolver } from './account/account.resolver';
 import {MinerComponent} from "./miner/miner.component";
 import {PdeHistoryComponent} from "./pde/pde-history/pde-history.component";
+import {WalletDetailComponent} from "./wallet-detail/wallet-detail.component";
 
 const routes: Routes = [{
   path: '',
   component: PagesComponent,
   children: [
+    {
+      path: 'wallet-detail',
+      component: WalletDetailComponent,
+    },
     {
       path: 'account',
       component: AccountComponent,

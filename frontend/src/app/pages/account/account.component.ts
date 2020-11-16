@@ -4,13 +4,16 @@ import { ActivatedRoute } from '@angular/router';
 import { AccountViewModel } from './account.vm';
 import { HttpClient } from '@angular/common/http';
 import { NbDialogService } from '@nebular/theme';
-import { DialogPassphraseComponent } from '../dialog/dialog-passphrase/dialog-passphrase.component';
 import { ToastrService } from 'ngx-toastr';
-import { DialogPassphraseViewModel, DialogPassphraseEnum } from '../dialog/dialog-passphrase/dialog-passphrase.vm';
-import { DialogCreateAccountComponent } from '../dialog/dialog-create-account/dialog-create-account.component';
-import { DialogCreateAccountViewModel } from '../dialog/dialog-create-account/dialog-create-account.vm';
-import { DialogImportAccountComponent } from '../dialog/dialog-import-account/dialog-import-account.component';
-import { DialogImportAccountViewModel } from '../dialog/dialog-import-account/dialog-import-account.vm';
+import {DomSanitizer} from "@angular/platform-browser";
+import {MashComponent} from "../_shared/mash/mash.component";
+import {DialogUnspentCoinViewModel} from "../dialog/dialog-unspent-coin/dialog-unspent-coin.vm";
+import {DialogUnspentCoinComponent} from "../dialog/dialog-unspent-coin/dialog-unspent-coin.component";
+import {DialogPassphraseEnum, DialogPassphraseViewModel} from "../dialog/dialog-passphrase/dialog-passphrase.vm";
+import {DialogPassphraseComponent} from "../dialog/dialog-passphrase/dialog-passphrase.component";
+import {IsUseless} from "../../infrastructure/common-helper";
+import {AccountClient} from "../../api-clients/account.client";
+import {SharedService} from "../../infrastructure/service/shared.service";
 
 @Component({
   selector: 'ngx-account',
@@ -19,61 +22,9 @@ import { DialogImportAccountViewModel } from '../dialog/dialog-import-account/di
 })
 export class AccountComponent implements OnInit {
 
-  settings = {
-    actions: {
-      add: false,
-      delete: false,
-      edit: false,
-      custom: [
-        {
-          name: 'switchAcc',
-          title: '<i class="nb-shuffle" title="Switch account"></i>',
-        },
-      ],
-      position: 'right'
-    },
-    add: {
-      addButtonContent: '<i class="nb-plus"></i>',
-      createButtonContent: '<i class="nb-checkmark"></i>',
-      cancelButtonContent: '<i class="nb-close"></i>',
-      confirmCreate: true,
-    },
-    edit: {
-      editButtonContent: '<i class="nb-edit"></i>',
-      saveButtonContent: '<i class="nb-checkmark"></i>',
-      cancelButtonContent: '<i class="nb-close"></i>',
-      confirmSave: true
-    },
-    columns: {
-      Id: {
-        title: '',
-        type: 'string',
-        filter: false,
-        editable: false,
-        addable: false,
-      },
-      Name: {
-        title: 'Account Name',
-        type: 'string',
-      },
-      PaymentAddress: {
-        title: 'Address',
-        type: 'string',
-        editable: false,
-        addable: false,
-      },
-    },
-    attr: {
-      class: 'table table-bordered',
-    },
-    pager: {
-      perPage: 1000,
-    },
-  };
-
   vm: AccountViewModel;
-  source: LocalDataSource = new LocalDataSource();
   balanceSettings: any;
+  source: LocalDataSource = new LocalDataSource();
   balanceSource: LocalDataSource = new LocalDataSource();
 
   constructor(
@@ -81,51 +32,35 @@ export class AccountComponent implements OnInit {
     protected http: HttpClient,
     protected dialogService: NbDialogService,
     private toast: ToastrService,
+    private accountClient: AccountClient,
+    private domSanitizer: DomSanitizer,
+    private sharedService: SharedService,
     ) {
     const data = this.route.snapshot.data.pageData;
     this.balanceSettings = this.getBalanceSettings();
     this.source.load(data.accList);
     this.balanceSource.load(data.balances);
+    this.vm = Object.assign(new AccountViewModel(), data.balances);
   }
 
   ngOnInit(): void {
+    this.sharedService.onMashModeChanged().subscribe((res) => {
+      this.balanceSource.refresh();
+    });
   }
-
-  onAddConfirm(event): void {
-    const req = {
-      target: DialogPassphraseEnum.addAccount,
-      data: {
-        name: event.newData.Name,
-      }
-    };
-    const vm = Object.assign(new DialogPassphraseViewModel(), req);
-    this.dialogService
-      .open(DialogPassphraseComponent, {
-        context: {
-          vm: vm,
-        },
-        hasScroll: true,
-        closeOnBackdropClick: false,
-      })
-      .onClose.subscribe(async (success) => {
-        if (success) {
-          this.toast.success('The account has been created successfully.');
-        }
-      });
+  isHideDataMash() {
+    return this.sharedService.hideDataMash;
   }
-
-  onEditConfirm(event): void {
-    this.toast.warning('This method will be coming soon!');
-  }
-
   onCustomAction(event): void {
     switch (event.action) {
       case 'switchAcc':
         this.switchAccount(event.data);
         break;
+      case 'UTXO':
+        this.showUnspentCoin(event.data);
+        break;
     }
   }
-
   switchAccount(data: any) {
     const req = {
       target: DialogPassphraseEnum.switchAccount,
@@ -143,52 +78,63 @@ export class AccountComponent implements OnInit {
         closeOnBackdropClick: false,
       })
       .onClose.subscribe(async (success) => {
-        if (success) {
-          this.toast.success('The account has been switched successfully.');
-        }
-      });
+      if (success) {
+        this.toast.success('The account has been switched successfully.');
+        this.onRefreshGrid('balance');
+      }
+    });
   }
-
-  onCreateAccount(event) {
+  async onRefreshGrid(grid) {
+    switch (grid) {
+      case 'balance':
+        const balances = await this.accountClient.getBalance({tokenid: ''}).toPromise().catch(err => err);
+        this.balanceSource.load(balances.Msg);
+        break;
+    }
+  }
+  showUnspentCoin(data: any) {
+    const vm = new DialogUnspentCoinViewModel();
+    vm.TokenID = data.TokenID;
     this.dialogService
-      .open(DialogCreateAccountComponent, {
+      .open(DialogUnspentCoinComponent, {
         context: {
-          vm: new DialogCreateAccountViewModel(),
+          vm: vm,
         },
         hasScroll: true,
         closeOnBackdropClick: false,
       })
-      .onClose.subscribe(async (success) => {
-        if (success) {
-          this.toast.success('The account has been added successfully.');
-        }
-      });
-  }
-
-  onImportAccount(event) {
-    this.dialogService
-      .open(DialogImportAccountComponent, {
-        context: {
-          vm: new DialogImportAccountViewModel(),
-        },
-        hasScroll: true,
-        closeOnBackdropClick: false,
-      })
-      .onClose.subscribe(async (success) => {
-        if (success) {
-          this.toast.success('The account has been imported successfully.');
-        }
-      });
+      .onClose.subscribe(async (res) => {
+    });
   }
 
   getBalanceSettings() {
     const settings = {
+      selectMode: 'single',
+      hideSubHeader: true,
       actions: {
+        columnTitle: 'UTXO',
         add: false,
         delete: false,
         edit: false,
+        custom: [
+          {
+            name: 'UTXO',
+            title: '<i class="nb-menu" title="UTXO"></i>',
+          },
+        ],
+        position: 'right'
       },
       columns: {
+        TokenImage: {
+          title: '',
+          type: 'html',
+          filter: false,
+          valuePrepareFunction: (value, row, cell) => {
+            const url = value ? value : 'assets/images/no_pic.png';
+            return this.domSanitizer.bypassSecurityTrustHtml(`<div class="d-flex justify-content-center align-items-center">
+            <img src="${url}" height="30" width="30"></div>`);
+          }
+        },
         TokenName: {
           title: 'Token name',
           type: 'string',
@@ -201,8 +147,12 @@ export class AccountComponent implements OnInit {
         },
         Amount: {
           title: 'Amount',
-          type: 'string',
+          type: 'number',
           filter: false,
+          valuePrepareFunction: (value, row, cell) => {
+            return parseInt(value, 10) / (10 ** parseInt(row.TokenDecimal, 10));
+          },
+          renderComponent: MashComponent,
         },
       },
       attr: {
