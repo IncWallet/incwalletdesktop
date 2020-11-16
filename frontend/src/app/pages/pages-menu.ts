@@ -24,14 +24,30 @@ export const MENU_ITEMS: NbMenuItem[] = [
     ],
   },
   {
-    title: 'Receive',
-    icon: 'layout-outline',
-    link: '/pages/receive',
-  },
-  {
     title: 'Transactions',
     icon: 'edit-2-outline',
-    link: '/pages/transaction',
+    children: [
+      {
+        title: 'History',
+        link: '/pages/transaction',
+        icon: 'file-text-outline',
+      },
+      {
+        title: 'Send',
+        icon: 'shuffle-2-outline',
+        link: '/pages/send',
+      },
+      {
+        title: 'Receive',
+        icon: 'layout-outline',
+        link: '/pages/receive',
+      },
+      {
+        title: 'Address book',
+        link: '/pages/address-book',
+        icon: 'map-outline',
+      },
+    ],
   },
   {
     title: 'Settings',
