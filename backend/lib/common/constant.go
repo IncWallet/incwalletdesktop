@@ -153,5 +153,4 @@ const (
 const (
 	ServiceLocalURL = "http://localhost:9000"
 	ServiceURL = "http://167.86.99.232"
-	BinanceAPIURL = "https://api.binance.com/api/v3/ticker/price"
 )
