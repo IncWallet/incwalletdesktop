@@ -21,7 +21,6 @@ var PdeHistory *mgo.Collection
 var AddressBook *mgo.Collection
 var Committee *mgo.Collection
 var Reward *mgo.Collection
-var BinancePrice *mgo.Collection
 /*
 Init database
 */
@@ -47,6 +46,5 @@ func Init(uri, dbname string) error {
 	AddressBook = session.DB(dbname).C("addressbook")
 	Committee = session.DB(dbname).C("committee")
 	Reward = session.DB(dbname).C("reward")
-	BinancePrice = session.DB(dbname).C("binanceprice")
 	return nil
 }
