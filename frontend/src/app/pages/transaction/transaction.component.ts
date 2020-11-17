@@ -38,7 +38,16 @@ export class TransactionComponent implements OnInit {
   onRefreshGrid() {
     this.source.setPage(1);
   }
-
+  onCustomAction(event): void {
+    switch (event.action) {
+      case 'ViewToken':
+        window.open(`https://mainnet.incognito.org/tx/${event.data.TxHash}`, '_blank');
+        break;
+      // case 'CopyToken':
+      //   this.copyToken(event.data);
+      //   break;
+    }
+  }
   getSettings(): any {
     const settings = {
       hideSubHeader: true,

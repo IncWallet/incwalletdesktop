@@ -277,14 +277,14 @@ export class WalletDetailComponent implements OnInit {
         confirmSave: true
       },
       columns: {
-        Hidden_PublicKey: {
-          title: 'Hidden',
-          type: 'string',
-          filter: false,
-          valuePrepareFunction: (value, row, cell) => {
-            return row.PublicKey;
-          }
-        },
+        // Hidden_PublicKey: {
+        //   title: 'Hidden',
+        //   type: 'string',
+        //   filter: false,
+        //   valuePrepareFunction: (value, row, cell) => {
+        //     return row.PublicKey;
+        //   }
+        // },
         Id: {
           title: '#',
           type: 'string',
@@ -309,7 +309,7 @@ export class WalletDetailComponent implements OnInit {
         },
         ValuePRV: {
           title: 'Value in PRV',
-          type: 'numer',
+          type: 'number',
           filter: false,
           // renderComponent: MashComponent,
         },

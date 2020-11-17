@@ -9,23 +9,16 @@ export class AccountResolver implements Resolve<any> {
   }
 
   async resolve(route: ActivatedRouteSnapshot): Promise<any> {
-    const [  accList, balance] = await Promise.all([
+    const [ accInfo, balance] = await Promise.all([
+      this.accountClient.info( {publicKey: "", passphrase: "" }).toPromise(),
 
-      this.accountClient.list().toPromise(),
       this.accountClient.getBalance({tokenid: ''}).toPromise(),
     ]);
 
-    if (!Array.isArray(accList.Msg))
-      accList.Msg = [];
     if (!Array.isArray(balance.Msg))
       balance.Msg = [];
-    if (!IsUseless(accList.Msg)) {
-      for (let index = 0; index < accList.Msg.length; index++) {
-        const element = accList.Msg[index];
-        element.Id = `#${index + 1}`;
-      }
-    }
 
-    return { accList: accList.Msg, balances: balance.Msg};
+
+    return { accInfo: accInfo.Msg, balances: balance.Msg};
   }
 }

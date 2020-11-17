@@ -38,9 +38,8 @@ export class AccountComponent implements OnInit {
     ) {
     const data = this.route.snapshot.data.pageData;
     this.balanceSettings = this.getBalanceSettings();
-    this.source.load(data.accList);
     this.balanceSource.load(data.balances);
-    this.vm = Object.assign(new AccountViewModel(), data.balances);
+    this.vm = Object.assign(new AccountViewModel(), data.accInfo);
   }
 
   ngOnInit(): void {
