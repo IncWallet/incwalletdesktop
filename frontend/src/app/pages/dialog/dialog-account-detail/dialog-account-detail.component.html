@@ -1,0 +1,167 @@
+
+
+<nb-flip-card [showToggleButton]="false" [flipped]="vm.Flipped">
+  <nb-card-front>
+    <nb-card>
+      <nb-card-header>
+        {{vm.AccountName}}
+      </nb-card-header>
+      <nb-card-body class="">
+        <!-- <div class="justify-content-center align-items-center">
+          <div class="form-group">
+            <label class="name caption-2 bold">Your Incognito Address</label>
+            <nb-form-field>
+              <input
+              type="text"
+              nbInput
+              fullWidth
+              readonly
+              [ngModel]="vm.PaymentAddress"
+              >
+              <button id="paymentAddress-QR" nbPrefix nbButton ghost title="QR code"
+              (click)="showQRCode($event)">
+                <nb-icon [icon]="'grid-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'QR code'">
+                </nb-icon>
+              </button>
+              <button id="paymentAddress" nbSuffix nbButton ghost title="Copy to clipboard"
+              [cdkCopyToClipboard]="vm.PaymentAddress" [cdkCopyToClipboardAttempts]="5">
+                <nb-icon [icon]="'copy-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'Copy to clipboard'">
+                </nb-icon>
+              </button>
+              
+            </nb-form-field>
+          </div>
+    
+          <div class="form-group">
+            <label class="name caption-2 bold">Private Key</label>
+            <nb-form-field>
+              <input
+              type="text"
+              nbInput
+              fullWidth
+              readonly
+              [ngModel]="vm.PrivateKey"
+              >
+              <button id="privateKey-QR" nbPrefix nbButton ghost title="QR code"
+              (click)="showQRCode($event)">
+                <nb-icon [icon]="'grid-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'QR code'">
+                </nb-icon>
+              </button>
+              <button id="privateKey" nbSuffix nbButton ghost title="Copy to clipboard"
+              [cdkCopyToClipboard]="vm.PrivateKey" [cdkCopyToClipboardAttempts]="5">
+                <nb-icon [icon]="'copy-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'Copy to clipboard'">
+                </nb-icon>
+              </button>
+            </nb-form-field>
+          </div>
+    
+          <div class="form-group">
+            <label class="name caption-2 bold">Public Key</label>
+            <nb-form-field>
+              <input
+              type="text"
+              nbInput
+              fullWidth
+              readonly
+              [ngModel]="vm.PublicKey"
+              >
+              <button id="publicKey-QR" nbPrefix nbButton ghost title="QR code"
+              (click)="showQRCode($event)">
+                <nb-icon [icon]="'grid-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'QR code'">
+                </nb-icon>
+              </button>
+              <button id="publicKey" nbSuffix nbButton ghost title="Copy to clipboard"
+              [cdkCopyToClipboard]="vm.PublicKey" [cdkCopyToClipboardAttempts]="5">
+                <nb-icon [icon]="'copy-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'Copy to clipboard'">
+                </nb-icon>
+              </button>
+            </nb-form-field>
+          </div>
+    
+          <div class="form-group">
+            <label class="name caption-2 bold">Readonly Key</label>
+            <nb-form-field>
+              <input
+              type="text"
+              nbInput
+              fullWidth
+              readonly
+              [ngModel]="vm.ViewingKey"
+              >
+              <button id="viewingKey-QR" nbPrefix nbButton ghost title="QR code"
+              (click)="showQRCode($event)">
+                <nb-icon [icon]="'grid-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'QR code'">
+                </nb-icon>
+              </button>
+              <button id="viewingKey" nbSuffix nbButton ghost title="Copy to clipboard"
+              [cdkCopyToClipboard]="vm.ViewingKey" [cdkCopyToClipboardAttempts]="5">
+                <nb-icon [icon]="'copy-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'Copy to clipboard'">
+                </nb-icon>
+              </button>
+            </nb-form-field>
+          </div>
+    
+          <div class="form-group">
+            <label class="name caption-2 bold">Validators Key</label>
+            <nb-form-field>
+              <input
+              type="text"
+              nbInput
+              fullWidth
+              readonly
+              [ngModel]="vm.MiningKey"
+              >
+              <button id="miningKey-QR" nbPrefix nbButton ghost title="QR code"
+              (click)="showQRCode($event)">
+                <nb-icon [icon]="'grid-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'QR code'">
+                </nb-icon>
+              </button>
+              <button id="miningKey" nbSuffix nbButton ghost title="Copy to clipboard"
+              [cdkCopyToClipboard]="vm.MiningKey" [cdkCopyToClipboardAttempts]="5">
+                <nb-icon [icon]="'copy-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'Copy to clipboard'">
+                </nb-icon>
+              </button>
+            </nb-form-field>
+          </div>
+        </div> -->
+      </nb-card-body>
+      <nb-card-footer>
+        <button nbButton status="basic" (click)="onCancel($event)" class="float-left text-normal">Cancel</button>
+      </nb-card-footer>
+    </nb-card>
+  </nb-card-front>
+  <nb-card-back>
+    <nb-card>
+      <nb-card-header>{{vm.AccountName}}</nb-card-header>
+      <nb-card-body class="row d-flex justify-content-center align-items-center text-center">
+        <div class="col-12 form-group">{{vm.QRField}}</div>
+        <div class="content col-12">
+          <qrcode #parent [qrdata]="vm.QRCode" [width]="275" [errorCorrectionLevel]="'H'" elementType="img"></qrcode>
+        </div>
+      </nb-card-body>
+      <nb-card-footer>
+        <button nbButton status="basic" (click)="toggleFlipped()" class="float-left text-normal">Back</button>
+      </nb-card-footer>
+    </nb-card>
+  </nb-card-back>
+</nb-flip-card>

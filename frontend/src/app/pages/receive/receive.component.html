@@ -1,1 +1,40 @@
-<p>receive works!</p>
+<nb-card>
+  <nb-card-header>
+    Receive
+  </nb-card-header>
+  <nb-card-body>
+    <div class="row justify-content-center align-items-center">
+      <div class="col-md-6 col-lg-6">
+        <div>
+          <div class="col-12 form-group text-center">
+              <h5>{{accountName}}</h5>
+          </div>
+          <div class="col-12 form-group text-center justify-content-center align-items-center">
+            <qrcode #parent [qrdata]="qrCode" [width]="325" [errorCorrectionLevel]="'H'" elementType="img"></qrcode>
+            <!-- <nb-form-field class="qrText">
+              <input
+              type="text"
+              nbInput
+              readonly
+              [ngModel]="qrCode"
+              >
+              <button nbSuffix nbButton ghost (click)="copyToClipboard()" title="Copy to clipboard">
+                <nb-icon [icon]="'copy-outline'"
+                        pack="eva"
+                        [attr.aria-label]="'Copy to clipboard'">
+                </nb-icon>
+              </button>
+            </nb-form-field> -->
+          </div>
+          <div class="col-12 form-group text-center">
+            <button class="btn-save-as-image text-normal" nbButton status="success" (click)="saveAsImage(parent)">
+              <nb-icon icon="cloud-download-outline"></nb-icon>
+              Save as image
+            </button>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </nb-card-body>
+</nb-card>

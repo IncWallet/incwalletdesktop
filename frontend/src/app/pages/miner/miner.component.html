@@ -1,0 +1,14 @@
+<nb-card>
+  <nb-card-header>
+    Miner
+    <button nbButton ghost status="basic" class="float-right" title="Refresh" 
+        (click)="onRefreshGrid()"><nb-icon icon="sync"></nb-icon></button>
+  </nb-card-header>
+  <nb-card-body>
+    <div class="row">
+      <div class="col-md-12">
+        <ng2-smart-table [settings]="minerSettings" [source]="minerResource" ></ng2-smart-table>
+      </div>
+    </div>
+  </nb-card-body>
+</nb-card>

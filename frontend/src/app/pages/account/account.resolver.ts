@@ -8,10 +8,11 @@ export class AccountResolver implements Resolve<any> {
     constructor(private accountClient: AccountClient) { }
 
     async resolve(route: ActivatedRouteSnapshot): Promise<any> {
-        const [accList, balance] = await Promise.all([
-            this.accountClient.list().toPromise(),
-            this.accountClient.getBalance({tokenid: ''}).toPromise(),
-        ]);
+      const [accInfo, accList, balance] = await Promise.all([
+        this.accountClient.info().toPromise(),
+        this.accountClient.list().toPromise(),
+        this.accountClient.getBalance({tokenid: ''}).toPromise(),
+      ]);
 
         if (!Array.isArray(accList.Msg))
           accList.Msg = [];
@@ -24,6 +25,6 @@ export class AccountResolver implements Resolve<any> {
           }
         }
 
-        return { accList: accList.Msg, balances: balance.Msg };
+        return { accInfo: accInfo.Msg, accList: accList.Msg, balances: balance.Msg };
     }
 }

@@ -1,0 +1,13 @@
+<nb-card>
+  <nb-card-header>
+    Address book
+  </nb-card-header>
+  <nb-card-body>
+    <div class="row">
+      <div class="col-md-12">
+        <ng2-smart-table [settings]="addressBookSettings" [source]="addressBookResource" (createConfirm)="onAddConfirm($event)"
+        (deleteConfirm)="onDeleteConfirm($event)" (custom)="onCustomAction($event)"></ng2-smart-table>
+      </div>
+    </div>
+  </nb-card-body>
+</nb-card>

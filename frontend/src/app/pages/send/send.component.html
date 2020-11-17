@@ -1,1 +1,116 @@
-<p>send works!</p>
+<div class="row">
+  <div class="col-md-12">
+    <nb-card>
+      <nb-card-header>
+        Send
+      </nb-card-header>
+      <nb-card-body>
+        <div aria-labelledby="title">
+          <div class="row align-items-end">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="name caption-2 bold">To Address</label>
+                <input
+                  nbInput
+                  id="toAddress"
+                  type="text"
+                  [ngModel]="vm.toAddress"
+                  (ngModelChange)="vm.toAddress = $event"
+                  fullWidth
+                  placeholder="To Address"
+                />
+              </div>
+            </div>
+            <div class="col-md-6 form-group">
+              <button nbButton status="success" (click)="onSelectAddressBook($event)" class="float-left">AB</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="name caption-2 bold">Token</label>
+                <input
+                  nbInput
+                  id="token"
+                  fullWidth
+                  type="text"
+                  status="basic"
+                  placeholder="Token"
+                  [ngModel]="vm.selectedToken"
+                  (ngModelChange)="vm.selectedToken = $event"
+                  autocomplete="off"
+                  (input)="onTokenChanged($event)"
+                />
+              </div>
+            </div>  
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="name caption-2 bold">Amount</label>
+                <input
+                  nbInput
+                  type="text"
+                  digitNumeric
+                  decimals="18"
+                  [ngModel]="vm.amount"
+                  (ngModelChange)="vm.amount = $event"
+                  fullWidth
+                  placeholder="Amount"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="row align-items-end">
+            <div class="col-6 col-md-4">
+              <div class="form-group" [formGroup]="sendForm" >
+                <label class="name caption-2 bold">Fee</label>
+                <input
+                  nbInput
+                  id="fee"
+                  type="number"
+                  [ngModel]="vm.fee"
+                  (ngModelChange)="vm.fee = $event"
+                  formControlName="fee"
+                  fullWidth
+                  placeholder="Fee"
+                />
+                <app-validation-message [for]="sendForm.get('fee')" [validationError]="feeMsg(5)"></app-validation-message>
+              </div>
+            </div>
+            <div class="col-6 col-md-4 align-items-end">
+              <div class="form-group">
+                <label></label>
+                <p>Nano PRV</p>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="name caption-2 bold">Memo</label>
+                <textarea
+                  nbInput
+                  type="text"
+                  [ngModel]="vm.memo"
+                  (ngModelChange)="vm.memo = $event"
+                  fullWidth
+                  placeholder="Memo"
+                >
+                </textarea>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="inline-align">
+                <button nbButton status="basic" (click)="onClear($event)" class="float-left text-normal form-group">Clear</button>
+                <button nbButton status="success" (click)="onSend($event)" class="float-left text-normal form-group">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>

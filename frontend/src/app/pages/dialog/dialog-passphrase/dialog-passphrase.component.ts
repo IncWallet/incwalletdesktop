@@ -3,7 +3,7 @@ import { NbDialogRef } from '@nebular/theme';
 import { AccountClient } from '../../../api-clients/account.client';
 import { DialogPassphraseViewModel, DialogPassphraseEnum } from './dialog-passphrase.vm';
 import { SharedService } from '../../../infrastructure/service/shared.service';
-import { IsUseless } from '../../../infrastructure/common-helper';
+import { IsResponseError } from '../../../infrastructure/common-helper';
 
 @Component({
   selector: 'ngx-dialog-passphrase',
@@ -52,10 +52,12 @@ export class DialogPassphraseComponent implements OnInit {
 
         this.sharedService.hideSpinner();
         break;
-
+      default:
+        this.ref.close(this.vm.passphrase);
+        return;
     }
 
-    this.ref.close(res && res.ok);
+    this.ref.close(!IsResponseError(res));
   }
 
   onCancel(event) {

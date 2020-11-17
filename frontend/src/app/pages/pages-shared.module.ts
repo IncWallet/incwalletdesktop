@@ -18,11 +18,18 @@ import {
 } from '@nebular/theme';
 import { ValidationMessageComponent } from './_shared/validation-message/validation-message.component';
 import { StatusCardComponent } from './_shared/status-card/status-card.component';
+import { TranslateModule } from '@ngx-translate/core';
+import { QRCodeModule } from 'angularx-qrcode';
+import { DialogPromptComponent } from './_shared/dialog-prompt/dialog-prompt.component';
+import { MashComponent } from './_shared/mash/mash.component';
+import { ClipboardModule } from 'ngx-clipboard';
 
 @NgModule({
   declarations: [
     ValidationMessageComponent,
     StatusCardComponent,
+    DialogPromptComponent,
+    MashComponent,
   ],
   imports: [
     CommonModule,
@@ -41,6 +48,9 @@ import { StatusCardComponent } from './_shared/status-card/status-card.component
     NbUserModule,
     NbSelectModule,
     NbDialogModule.forRoot(),
+    TranslateModule,
+    QRCodeModule,
+    ClipboardModule,
 
   ],
   exports: [
@@ -58,13 +68,23 @@ import { StatusCardComponent } from './_shared/status-card/status-card.component
     NbListModule,
     NbUserModule,
     NbSelectModule,
+    TranslateModule,
+    QRCodeModule,
+    ClipboardModule,
 
     ValidationMessageComponent,
     StatusCardComponent,
+    DialogPromptComponent,
+    MashComponent,
+
+
   ],
   entryComponents: [
     ValidationMessageComponent,
     StatusCardComponent,
+    DialogPromptComponent,
+    MashComponent,
+
   ],
 })
 export class PagesSharedModule {}

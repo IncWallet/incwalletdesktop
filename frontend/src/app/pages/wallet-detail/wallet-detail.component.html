@@ -1,0 +1,28 @@
+<div class="row">
+  <div class="col-md-12">
+    <nb-card>
+      <nb-card-header>
+        Accounts
+        <button nbButton ghost status="basic" class="float-right" title="Refresh" (click)="onRefreshGrid('accounts')"><nb-icon icon="sync"></nb-icon></button>
+      </nb-card-header>
+    
+      <nb-card-body>
+        <div class="row">
+          <div class="col-md-12 inline-align">
+            <div class="form-group">
+              <button nbButton status="success" (click)="onCreateAccount($event)" class="float-left text-normal"><nb-icon icon="plus-circle-outline"></nb-icon> Create account</button>
+            </div>
+            <div class="form-group">
+              <button nbButton status="success" (click)="onImportAccount($event)" class="text-normal"><nb-icon icon="inbox-outline"></nb-icon> Import account</button>
+            </div>
+            <div class="form-group">
+              <button nbButton status="success" (click)="onSyncAllAccount($event)" class="text-normal"><nb-icon icon="activity-outline"></nb-icon> Sync all</button>
+            </div>
+          </div>
+        </div>
+        <ng2-smart-table [ngClass]="'hd-cl-1'" [settings]="accountSettings" [source]="accountSource" (custom)="onCustomAction($event)">
+        </ng2-smart-table>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+
+<nb-card>
+  <nb-card-header>Select address book</nb-card-header>
+  <nb-card-body>
+    <ng2-smart-table [settings]="addressSettings" [source]="addressSource" (custom)="onCustomAction($event)">
+    </ng2-smart-table>
+  </nb-card-body>
+  <nb-card-footer>
+    <button nbButton status="basic" (click)="onCancel($event)" class="float-left">Back</button>
+  </nb-card-footer>
+</nb-card>

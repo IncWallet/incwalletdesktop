@@ -1,0 +1,11 @@
+
+<nb-card>
+  <nb-card-header>UTXO</nb-card-header>
+  <nb-card-body>
+    <ng2-smart-table [settings]="unspentSettings" [source]="unspentSource">
+    </ng2-smart-table>
+  </nb-card-body>
+  <nb-card-footer>
+    <button nbButton status="basic" (click)="onCancel($event)" class="float-left">Back</button>
+  </nb-card-footer>
+</nb-card>

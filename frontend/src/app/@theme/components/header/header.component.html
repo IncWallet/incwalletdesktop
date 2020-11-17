@@ -3,16 +3,26 @@
     <a (click)="toggleSidebar()" href="#" class="sidebar-toggle">
       <nb-icon icon="menu-2-outline"></nb-icon>
     </a>
-    <a class="logo" href="#" (click)="navigateHome()">WIC</a>
+    <a class="logo" href="#" (click)="navigateHome()">IncWallet</a>
   </div>
 </div>
 
 <div class="header-container">
-  <nb-actions size="small">
+  <nb-actions size="small" *ngIf="isHideDataMash(); else mashView">
 
     <nb-action class="control-item">
       <nb-search type="rotate-layout"></nb-search>
     </nb-action>
-    <nb-action class="control-item" icon="bell-outline"></nb-action>
+    <nb-action class="control-item" icon="eye-outline" (click)="toggleDataMash()"></nb-action>
+    
   </nb-actions>
+  <ng-template #mashView>
+    <nb-actions size="small">
+
+      <nb-action class="control-item">
+        <nb-search type="rotate-layout"></nb-search>
+      </nb-action>
+      <nb-action class="control-item" icon="eye-off-outline" (click)="toggleDataMash()"></nb-action>
+    </nb-actions>
+  </ng-template>
 </div>

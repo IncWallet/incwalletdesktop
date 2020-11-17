@@ -1,0 +1,12 @@
+<nb-card accent="success">
+  <nb-card-header>Confirm</nb-card-header>
+  <nb-card-body>
+    <div class="form-group">
+      {{messages}}
+    </div>
+  </nb-card-body>
+  <nb-card-footer>
+    <button nbButton status="basic" (click)="onCancel($event)" class="float-left text-normal">Cancel</button>
+    <button nbButton status="success" (click)="onSubmit($event)" class="float-right text-normal">OK</button>
+  </nb-card-footer>
+</nb-card>

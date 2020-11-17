@@ -15,6 +15,15 @@ export class AccountClient {
       }));
     }
 
+    info(model?: { passphrase: string, publicKey: string }): Observable<any> {
+      return from(new Promise((resolve, reject) => {
+        // @ts-ignore
+        window.backend.AccountCtrl.GetInfo((model && model.publicKey) || '', (model && model.passphrase) || '').then(res => {
+          resolve(JSON.parse(res));
+        }).catch(err => reject(JSON.parse(err)));
+      }));
+    }
+
     add(model: { name: string, passphrase: string}): Observable<any> {
       return from(new Promise((resolve, reject) => {
         // @ts-ignore
@@ -46,6 +55,33 @@ export class AccountClient {
       return from(new Promise((resolve, reject) => {
         // @ts-ignore
         window.backend.AccountCtrl.GetBalance(model.tokenid).then(res => {
+          resolve(JSON.parse(res));
+        }).catch(err => reject(JSON.parse(err)));
+      }));
+    }
+
+    sync(model: { publickey: string, passphrase: string }): Observable<any> {
+      return from(new Promise((resolve, reject) => {
+        // @ts-ignore
+        window.backend.AccountCtrl.SyncAccount(model.publickey, model.passphrase).then(res => {
+          resolve(JSON.parse(res));
+        }).catch(err => reject(JSON.parse(err)));
+      }));
+    }
+
+    syncAll(model: { passphrase: string }): Observable<any> {
+      return from(new Promise((resolve, reject) => {
+        // @ts-ignore
+        window.backend.AccountCtrl.SyncAllAccounts(model.passphrase).then(res => {
+          resolve(JSON.parse(res));
+        }).catch(err => reject(JSON.parse(err)));
+      }));
+    }
+
+    getUnspent(model: {tokenid: string}): Observable<any> {
+      return from(new Promise((resolve, reject) => {
+        // @ts-ignore
+        window.backend.AccountCtrl.ListUnspent(model.tokenid).then(res => {
           resolve(JSON.parse(res));
         }).catch(err => reject(JSON.parse(err)));
       }));

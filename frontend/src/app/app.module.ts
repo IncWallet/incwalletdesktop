@@ -25,6 +25,7 @@ import { AuthGuard } from './infrastructure/auth.guard';
 import { APP_BASE_HREF } from '@angular/common';
 import { NgxAuthModule } from './infrastructure/auth.module';
 import { PagesModule } from './pages/pages.module';
+import { TranslateModule } from '@ngx-translate/core';
 
 @NgModule({
   declarations: [
@@ -43,6 +44,7 @@ import { PagesModule } from './pages/pages.module';
     NbDatepickerModule.forRoot(),
     NbDialogModule.forRoot(),
     NbWindowModule.forRoot(),
+    TranslateModule.forRoot(),
     ToastrModule.forRoot({
         timeOut: 4000,
         positionClass: 'toast-top-right',

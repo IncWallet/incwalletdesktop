@@ -12,6 +12,12 @@ import { TransactionComponent } from './pages/transaction/transaction.component'
 import { SettingComponent } from './pages/setting/setting.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { AccountResolver } from './pages/account/account.resolver';
+import { WalletDetailComponent } from './pages/wallet-detail/wallet-detail.component';
+import { SendResolver } from './pages/send/send.resolver';
+import { AddressBookComponent } from './pages/address-book/address-book.component';
+import { AddressBookResolver } from './pages/address-book/address-book.resolver';
+import { MinerComponent } from './pages/miner/miner.component';
+import { PdeHistoryComponent } from './pages/pde/pde-history/pde-history.component';
 
 export const routes: Routes = [
   {
@@ -20,6 +26,10 @@ export const routes: Routes = [
     component: PagesComponent,
     children: [
       {
+        path: 'wallet-detail',
+        component: WalletDetailComponent,
+      },
+      {
         path: 'account',
         component: AccountComponent,
         resolve: { pageData: AccountResolver },
@@ -27,6 +37,7 @@ export const routes: Routes = [
       {
         path: 'send',
         component: SendComponent,
+        resolve: { pageData: SendResolver },
       },
       {
         path: 'receive',
@@ -37,12 +48,25 @@ export const routes: Routes = [
         component: TransactionComponent,
       },
       {
+        path: 'address-book',
+        component: AddressBookComponent,
+        resolve: { pageData: AddressBookResolver },
+      },
+      {
         path: 'setting',
         component: SettingComponent,
       },
       {
+        path: 'miner',
+        component: MinerComponent,
+      },
+      {
+        path: 'pde-history',
+        component: PdeHistoryComponent,
+      },
+      {
         path: '',
-        redirectTo: 'account',
+        redirectTo: 'wallet-detail',
         pathMatch: 'full',
       },
       {

@@ -4,8 +4,8 @@ import { Component, Input } from '@angular/core';
   selector: 'ngx-status-card',
   styleUrls: ['./status-card.component.scss'],
   template: `
-    <nb-card (click)="on = !on" [ngClass]="{'off': !on}">
-      <div class="icon-container">
+    <nb-card [ngClass]="{'off': !on}">
+      <div (click)="on = !on" class="icon-container">
         <div class="icon status-{{ type }}">
           <ng-content></ng-content>
         </div>
@@ -13,7 +13,10 @@ import { Component, Input } from '@angular/core';
 
       <div class="details">
         <div class="title h6">{{ title }}</div>
-        <div>{{ description }}</div>
+        <div *ngIf="!mash; else mashView">{{ description }}</div>
+        <ng-template #mashView>
+          <ngx-mash [value]="description"></ngx-mash>
+        </ng-template>
       </div>
     </nb-card>
   `,
@@ -22,6 +25,7 @@ export class StatusCardComponent {
 
   @Input() title: string;
   @Input() description: string;
+  @Input() mash: boolean;
   @Input() type: string;
   @Input() on = true;
 }
