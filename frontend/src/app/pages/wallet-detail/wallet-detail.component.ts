@@ -149,7 +149,7 @@ export class WalletDetailComponent implements OnInit {
     this.sharedService.showSpinner();
 
     const res = await this.accountClient
-      .info({passPhrase: passPhrase, publickey: data.PublicKey})
+      .info({passphrase: passPhrase, publicKey: data.PublicKey})
       .toPromise()
       .catch((err) => err);
 
