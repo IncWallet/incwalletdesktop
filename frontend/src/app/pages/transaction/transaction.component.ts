@@ -1,12 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { ServerDataSource } from 'ng2-smart-table';
-import { environment } from '../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { LocalDataSource } from 'ng2-smart-table';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ToastrService } from 'ngx-toastr';
 import { MashComponent } from '../_shared/mash/mash.component';
 import { SharedService } from '../../infrastructure/_index';
 import { ClipboardService, IClipboardResponse } from 'ngx-clipboard';
+import { TransactionClient } from '../../api-clients/transaction.client';
 
 @Component({
   selector: 'ngx-transaction',
@@ -16,14 +15,14 @@ import { ClipboardService, IClipboardResponse } from 'ngx-clipboard';
 export class TransactionComponent implements OnInit {
 
   settings: any;
-  source: ServerDataSource;
+  source: LocalDataSource = new LocalDataSource();
 
   constructor(
-    private http: HttpClient,
     private domSanitizer: DomSanitizer,
     private toast: ToastrService,
     private clipboard: ClipboardService,
     private sharedService: SharedService,
+    private transactionClient: TransactionClient,
   ) { }
 
   ngOnInit(): void {
@@ -36,9 +35,8 @@ export class TransactionComponent implements OnInit {
   }
 
   async loadTransactions() {
-    this.source = new ServerDataSource(this.http,
-      { dataKey: 'Msg.Detail', endPoint: `${environment.apiUrl}/transactions/history`,
-      pagerPageKey: 'pageindex', pagerLimitKey: 'pagesize', totalKey: 'Msg.Size' });
+    const histories = await this.transactionClient.history(200, 1).toPromise().catch(err => err);
+    this.source.load((histories.Msg && histories.Msg.Detail) || []);
   }
 
   onRefreshGrid() {
