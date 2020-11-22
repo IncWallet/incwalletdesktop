@@ -114,12 +114,12 @@ export class SendComponent implements OnInit {
     const model = new Transaction();
     model.receivers = {};
     model.receivers[`"${this.vm.toAddress}"`] = this.viewAmountToRaw(
-      this.vm.amount,
+      this.vm.amount || 0,
       this.vm.rawTokens.filter((x) => x.TokenID === this.vm.selectedToken)
     );
-    model.tokenid = this.vm.selectedToken;
-    model.fee = this.vm.fee;
-    model.info = this.vm.memo;
+    model.tokenid = this.vm.selectedToken || '';
+    model.fee = this.vm.fee || 0;
+    model.info = this.vm.memo || '';
     model.passphrase = passPhrase;
 
     let res;

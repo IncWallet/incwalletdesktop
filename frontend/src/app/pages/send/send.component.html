@@ -29,18 +29,19 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label class="name caption-2 bold">Token</label>
-                <input
-                  nbInput
-                  id="token"
-                  fullWidth
-                  type="text"
-                  status="basic"
-                  placeholder="Token"
-                  [ngModel]="vm.selectedToken"
-                  (ngModelChange)="vm.selectedToken = $event"
-                  autocomplete="off"
-                  (input)="onTokenChanged($event)"
-                />
+                <nb-select size="large" fullWidth placeholder="Token" [(selected)]="vm.selectedToken" status="basic">
+                  <nb-select-label [innerHtml]="vm.selectedToken"></nb-select-label>
+                  <nb-option *ngFor="let option of vm.tokens" [value]="option.keys">
+                    <div class="select-col-content">
+                      <div
+                        *ngFor="let col of option.visibleCols; let i = index"
+                        class="{{ 'select-col-' + option.visibleCols.length }}"
+                      >
+                        {{ col.value }}
+                      </div>
+                    </div>
+                  </nb-option>
+                </nb-select>
               </div>
             </div>  
           </div>

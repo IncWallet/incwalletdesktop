@@ -1,10 +1,11 @@
-import { RichDropDownItem, Cell, RowData } from '../../api-clients/_index';
+import { RichDropDownItem, Cell, RowData, DropDownItem } from '../../api-clients/_index';
 import { Observable, of } from 'rxjs';
 
 export class SendViewModel {
   constructor() {
     this.autoTokens$ = of([]);
     this.rawTokens = new Array();
+    this.tokens = new Array();
   }
 
   toAddress: string;
@@ -14,6 +15,7 @@ export class SendViewModel {
   memo: string;
 
   rawTokens: any[];
+  tokens: RichDropDownItem[];
   autoTokens$: Observable<RichDropDownItem[]>;
 }
 
@@ -35,6 +37,7 @@ export class SendViewModelResolver {
       });
 
       model.autoTokens$ = of(dropDownItems);
+      model.tokens = dropDownItems;
     }
   }
 

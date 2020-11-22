@@ -28,7 +28,7 @@ export class WalletComponent implements OnInit {
 
   ngOnInit(): void {
     if (Auth.IsLoggedInWallet(this.state)) {
-      this.router.navigate(['pages/account']);
+      this.router.navigate(['/', 'pages/wallet-detail']);
     }
   }
 
@@ -56,7 +56,7 @@ export class WalletComponent implements OnInit {
       })
       .onClose.subscribe(async (success) => {
         if (success) {
-          this.router.navigate(['pages/account']);
+          this.router.navigate(['/', 'pages/wallet-detail']);
          }
       });
   }
