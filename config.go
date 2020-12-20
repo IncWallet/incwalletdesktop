@@ -1,6 +1,6 @@
 package main
 
 const (
-	DatabaseName = "incwalletdesktop"
+	DatabaseName = "incwallet"
 	DatabaseURI = "mongodb://localhost:27017"
 )

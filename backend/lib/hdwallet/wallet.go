@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	IncognitoAccountPrefix      = "m/44'/1750'"
-	IncognitoPrimaryAccountPath = "m/44'/1750'/0'"
-	IncognitoAccountPathFormat  = "m/44'/1750'/%d'"
+	IncognitoAccountPrefix      = "m/44'/587'"
+	IncognitoPrimaryAccountPath = "m/44'/587'/0'"
+	IncognitoAccountPathFormat  = "m/44'/587'/%d'"
 	FirstHardenedIndex          = 1 << 31 // bip 44, hardened child key mast begin with 2^32
 	seedModifier                = "incognito modifier seed"
 	defaultPassphrase           = "incognito passphrase"
